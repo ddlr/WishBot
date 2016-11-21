@@ -22,6 +22,9 @@ module.exports = {
 [Source](https://github.com/hsiw/Wishbot)
 [Support Server](https://discord.gg/0lBiROCNVaGw5Eqk)
 [Docs](https://github.com/hsiW/WishBot/wiki)
+
+Note that there may be custom changes by Chryssi.
+[Contact Chryssi](ddlpd at protonmail dot ch)
 \`\`\`
 `
         })

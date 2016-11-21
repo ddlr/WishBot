@@ -109,11 +109,23 @@ function returnSFWImage(data) {
 }
 
 //Set random bot status(includes random game as well as random streaming url)
+//exports.setRandomStatus = (bot, urls) => {
+//    bot.shards.forEach(shard => {
+//        shard.editStatus({
+//            name: playing[~~(Math.random() * (playing.length))],
+//            type: 1,
+//            url: urls[~~(Math.random() * (urls.length))]
+//        });
+//    })
+//}
+
+// Modified by Chryssi
 exports.setRandomStatus = (bot, urls) => {
     bot.shards.forEach(shard => {
         shard.editStatus({
             name: playing[~~(Math.random() * (playing.length))],
-            type: 1,
+            // 0: default, 1: Twitch streaming
+            type: 0,
             url: urls[~~(Math.random() * (urls.length))]
         });
     })

@@ -17,8 +17,10 @@ module.exports = {
                 delete: true
             })
             else {
-                //Create a emnbed message in the #feature_requests channel in the Yuki-chan server with the users request
-                bot.createMessage('142794318837579777', {
+                //Create a embed message in the #feature_requests channel in the Yuki-chan server with the users request
+                // Note that Chryssi has changed this to a channel in his own server
+                // This is a channel for bot testing please don’t send actual requests here I’ll never check them
+                bot.createMessage('249654337477935104', {
                     embed: {
                         author: {
                             name: `${msg.author.username} (${msg.channel.guild.name})`,
