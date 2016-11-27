@@ -12,20 +12,20 @@ module.exports = {
             message: `\`\`\`markdown
 [WishBot Info](${bot.user.username}) 
 
+Changeling Bot is built on top of Mei’s WishBot Core.
+
 # About this Bot
-[Main Developer](Mei#5429) 
+[Developer of WishBot](Mei#5429)
+[Developer of Changeling Bot](Chryssi#1856)
 [Default Prefix](${prefix})
 [Bot Version](v${botVersion})
 [Discord Library](Eris - v${libVersion})  
  
 # Use ${prefix}help for a list of the current bot commands.
-[Source](https://github.com/hsiw/Wishbot)
-[Support Server](https://discord.gg/TNcWfWE)
+[WishBot source code](https://github.com/hsiw/Wishbot)
+[Changeling Bot source code](https://github.com/ddlr/WishBot)
+[Support Server](https://discord.gg/hNYstHJ)
 [Docs](https://github.com/hsiW/WishBot/wiki)
-
-Although this bot is primarily based on Mei’s Wishbot (see [Main Developer]),
-there has been a few small additions by Chryssi.
-[Contact Chryssi](Chryssi#1856)
 
 WARNING: This bot can explode from time to time. Handle with caution.
 \`\`\`

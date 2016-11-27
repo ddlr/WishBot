@@ -65,7 +65,6 @@ function bacon(args, blehp) {
         }
     }
 
-
     // Whether to continue making requests to Derpibooru
     // Set to false when somethingWentWrong() is called
     let makeRequest = true;
