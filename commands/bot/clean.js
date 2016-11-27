@@ -5,9 +5,17 @@ module.exports = {
     cooldown: 25,
     process: (msg, args, bot) => {
         return new Promise(resolve => {
+            console.log(
+              miscC('clean:') +
+              ' starting cleaning process'
+            );
             /^\d+$/.test(args) ? args = parseInt(args) : args = 50; //Checks if args is a number(as well as it existing) and if so sets args to that number otherwise defaults to 50
             //Check to make sure the bot has access to the bulk delete endpoint which requires mangeMessages
             if (msg.channel.permissionsOf(bot.user.id).has('manageMessages')) {
+                console.log(
+                  miscC('clean:') +
+                  ' bot has manageMessages permission'
+                );
                 //Purges the bots messages from the number of messages the user requested
                 msg.channel.purge(args, message => message.author.id === bot.user.id, msg.id).then(deleted => resolve({
                     //When purge is finished return the relevant message which will be deleted after 5s 
@@ -15,6 +23,10 @@ module.exports = {
                     delete: true
                 })).catch(err => console.log(errorC(err)))
             } else {
+                console.log(
+                  miscC('clean:') +
+                  ' bot does not have manageMessages permission'
+                );
                 var deleted = 0; //Tracks the number of deleted messages
                 //Get an array of the number of messages starting before the command message
                 msg.channel.getMessages(args, msg.id).then(messages => {

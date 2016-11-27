@@ -9,5 +9,6 @@
         "user": "",
         "password": "",
         "database": ""
-    }
+    },
+    "show_args_in_console": false
 }
