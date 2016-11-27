@@ -12,13 +12,18 @@
 // TODO: consolidate console.log() into one wrapper function that automatically
 //       prints "derpibooru:" at the front of the command as infoC() or
 //       miscC() depending on parameters
+//
+// TODO: Make an option in options/options.json called debugging that enables or
+//       disables excessive use of console.log()
 
 'use strict';
 
+// TODO: See if I can merge this into one const statement
 const https = require('https');
 const qs = require('querystring');
+const admins = require('./../../options/admins.json');
 
-function bacon(args, blehp) {
+function bacon(args, blehp, authorID) {
     // Custom filters.
     //
     // `include` is the Derpibooru filter this filter includes. This is
@@ -61,7 +66,9 @@ function bacon(args, blehp) {
         }, fourths: {
             aliasOf: 'fourhts'
         }, fourhts: {
-            tags: '(raridash OR sciset OR taviscratch OR raripie OR appleshy OR hoodies OR twinkie OR rarilight OR thoraxspike) AND cute AND NOT comic'
+            tags: '(raridash OR sciset OR taviscratch OR raripie OR appleshy ' +
+              'OR hoodies OR twinkie OR rarilight OR thoraxspike) AND cute ' +
+              'AND NOT comic'
         }
     }
 
@@ -109,13 +116,25 @@ function bacon(args, blehp) {
             // second word onwards is list of tags
             let customTags = args.split(/ (.+)/)[1];
 
+            if (Number.isInteger(parseInt(filter)) && parseInt(filter) > 0) {
+                // Check if user is admin
+                // TODO: Make this available to mods as well, and make it
+                // toggleable (also see the checkIfFilter function)
+                if (! (admins.indexOf(authorID) > -1)) {
+                    somethingWentWrong([
+                      'You do not have permission to select your own filter ' +
+                      '(via the ` format).'
+                    ]);
+                }
+                filterTags = '';
+            }
             // Setting filterTags, i.e. retrieving the tags key in the
             // filter in the filters object. The comments are the only
             // reason this section is so long, so they better be useful
             // to somebody. I hope.
             // Filter stated by user (first parameter which is prefixed
             // by a backtick ` ) exists in the filters object
-            if (filters.hasOwnProperty(filter)) {
+            else if (filters.hasOwnProperty(filter)) {
                 function blohp(filter, i) {
                     // Check if filter is an alias of another filter
                     // Also prevent recursion (i is max number of times to run)
@@ -128,16 +147,24 @@ function bacon(args, blehp) {
 
                     function blihp() {
                         // Check if filter has tags
-                        if (filters.hasOwnProperty(filter) && filters[filter].hasOwnProperty('tags')) {
+                        if (
+                          filters.hasOwnProperty(filter) &&
+                          filters[filter].hasOwnProperty('tags')
+                        ) {
                             return filters[filter].tags;
                         } else {
-                            somethingWentWrong([ `filter ${filter} doesn’t exist!` ]);
+                            somethingWentWrong([
+                              `filter ${filter} doesn’t exist!`
+                            ]);
                             return ''; // TODO: Redundant?
                         }
                     }
 
                     // Check if filter is an alias
-                    if (filters.hasOwnProperty(filter) && filters[filter].hasOwnProperty('aliasOf')) {
+                    if (
+                      filters.hasOwnProperty(filter) &&
+                      filters[filter].hasOwnProperty('aliasOf')
+                    ) {
                         if (i < 3) {
                             return blohp(filters[filter].aliasOf, i + 1);
                         } else {
@@ -198,14 +225,14 @@ function bacon(args, blehp) {
             if (filterTags && customTags) {
                 // Both filterTags and customTags exist
                 console.log(
-                  miscC('depibooru:') +
+                  miscC('derpibooru:') +
                   ' tags specified by both filter and custom tags'
                 );
                 tags = filterTags + ',' + customTags;
             } else if (filterTags && (! customTags)) {
                 // Only filterTags exist
                 console.log(
-                  miscC('depibooru:') +
+                  miscC('derpibooru:') +
                   ' tags specified by filter, no custom tags specified'
                 );
                 tags = filterTags;
@@ -213,15 +240,18 @@ function bacon(args, blehp) {
                 // Only customTags exist
                 console.log(
                   warningC('derpibooru:') +
-                  ' invalid filter name, custom tags specified'
+                  ' no filter tags, custom tags specified'
                 );
                 tags = customTags;
             } else {
-              // If the filter name stated by user doesn’t actually
-              // exist (filter should have been set to default above)
+              // If the filter name stated by user doesn’t actually exist. This
+              // should only happen if filter is set as an integer (e.g.
+              // derpibooru_custom `133664), as if the filter is not an integer
+              // and doesn’t exist, filterTags should already have been set to
+              // those of the default, above.
               console.log(
                 warningC('derpibooru:') +
-                ' invalid filter name, no custom tags specified'
+                ' no filter tags, no custom tags specified'
               );
               tags = '';
             }
@@ -263,7 +293,7 @@ function bacon(args, blehp) {
     // Logs warnings in console.log (i.e. terminal)
     function logError(message) {
         console.log(
-          errorC('derpibooru:') + errorC(' Error -') + ' ' + message
+          errorC('derpibooru:') + ' Error - ' + message
         );
     };
 
@@ -289,17 +319,33 @@ function bacon(args, blehp) {
     // Derpibooru filter as well. If so, return the &filter_id param,
     // which is used in the path of the Derpibooru requests.
     function checkIfFilter(f, filter) {
-      let include;
-      // TODO: Add support for aliasOf
-      include =
-        f[filter].hasOwnProperty('include')
-          ? f[filter].include
-          : '';
-      // Filter numbers must be positive integers
-      if ( Number.isInteger(include) && include > 0 )
+        let include;
+        // TODO: Add support for aliasOf
+        if (Number.isInteger(parseInt(filter)) && parseInt(filter) > 0) {
+            // Check if user is admin
+            // TODO: Make this available to mods as well, and make it toggleable
+            if (admins.indexOf(authorID) > -1) include = parseInt(filter);
+            else {
+                // If user does not have permission to use `[custom filter]
+                // This part still runs because JS is silly
+                //
+                // This sets the filter_id to the default, safe filter
+                include = 133664;
+            }
+        }
+        // Derpibooru filter numbers (or IDs) must be positive integers
+        // Also, someone please tell me how to properly separate this long else
+        // if statment into separate lines
+        else if (
+          f[filter].hasOwnProperty('include') &&
+          Number.isInteger(f[filter].include) &&
+          f[filter].include > 0
+        ) {
+            include = parseInt(f[filter].include);
+        } else {
+            include = 133664;
+        }
         return `&filter_id=${include}`;
-      else
-        return `&filter_id=133664`;
     }
 
     console.log(
@@ -314,7 +360,8 @@ function bacon(args, blehp) {
     let getTotalNoOptions = {
         hostname: 'derpibooru.org',
         port: '443',
-        path: `/search.json?q=${checkIfTags(tags)}&page=1${checkIfFilter(filters, filter)}`,
+        path: `/search.json?q=${checkIfTags(tags)}&page=1` +
+          `${checkIfFilter(filters, filter)}`,
         method: 'GET'
     };
 
@@ -429,7 +476,9 @@ function bacon(args, blehp) {
 
                 // Error: Invalid status code
                 if (res.statusCode !== 200) {
-                    error = new Error(` Returned HTTP status code ${res.statusCode}`);
+                    error = new Error(
+                      `Returned HTTP status code ${res.statusCode}`
+                    );
                 } // Error: Not actually JSON
                 else if ( ! /^application\/json/.test(contentType) ) {
                     error = new Error(
@@ -476,7 +525,8 @@ function bacon(args, blehp) {
                         logError(e.message);
                         blehp(
                           'Error: Sorry, there was a problem in parsing the ' +
-                          'search results! (likely due to no results :frowning:)'
+                          'search results! (likely due to no results ' +
+                          ':frowning:)'
                         );
                     }
                 }); // res.on('end' ... )
@@ -493,10 +543,10 @@ function bacon(args, blehp) {
                 });
 
             }); // let req = https.get
-        }, function (reason) {
+        }).catch(reason => {
             // Getting total number of search results failed
             blehp(reason);
-        }); // getTotalNo.then()
+        }); // getTotalNo.catch()
     } // if (makeRequest)
 }
 
@@ -518,10 +568,15 @@ module.exports = {
       '```' +
       '\n' +
       '**List of filters:**\n' +
+      '`` `rdd``: employs tags cute,-comic,raridash,artist:raridashdoodles\n' +
       '`` `fourths``, `` `fourhts``: uses filter 133664, ' +
-      'and employs tags cute,-comic,raridash,artist:raridashdoodles\n' +
-      '`` `max_spoilers``: uses filter 37430 (to be added)\n' +
-      '`` `default``: uses filter 133664 (sensible filter, hides unpleasant stuff)\n'
+      'and employs tags (raridash OR sciset OR taviscratch OR raripie OR ' +
+      'appleshy OR hoodies OR twinkie OR rarilight OR thoraxspike) AND cute ' +
+      'AND NOT comic\n' +
+      '`` `default``: uses filter 133664 (sensible filter, hides unpleasant ' +
+      'stuff)\n' +
+      'Or alternatively, use a Derpibooru filter in the format `filter, e.g. ' +
+      '`` `133664`` for https://derpibooru.org/filters/133664.'
       ,
     aliases: ['dpc'],
     dm: true,
@@ -537,14 +592,20 @@ module.exports = {
             message: "Retrieving Derpibooru image…",
             edit_async: new Promise(resolve => {
                 let output;
-                let a = new Promise(function(resolve) {
-                    bacon(args, (message) => {
-                      output = message;
-                      console.log(
-                        miscC('derpibooru:') +
-                        ' resolving promise: ' + message);
-                      resolve(output);
-                    });
+                let a = new Promise(resolve => {
+                    bacon(
+                      args,
+                      (message) => {
+                        output = message;
+                        console.log(
+                          miscC('derpibooru:') +
+                          ' resolving promise: ' +
+                          message
+                        );
+                        resolve(output);
+                      },
+                      msg.author.id
+                    );
                 });
                 // Once a is done, return output
                 a.then(() => {
@@ -553,7 +614,7 @@ module.exports = {
                       ' returning output of derpibooru'
                     );
                     resolve(output);
-                }, (e) => {
+                }).catch(e => {
                     console.log(
                       warningC('derpibooru:') +
                       ' unknown error (printed below)'
@@ -563,7 +624,6 @@ module.exports = {
             })
 
         });
-
 
     } // process
 } // module.exports
