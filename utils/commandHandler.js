@@ -70,7 +70,8 @@ module.exports = (msg, args, cmd, bot) => {
         }
         //Process the command
         else {
-            cmd.run(msg, args, bot)
+            //Execute the command
+            cmd.exec(msg, args, bot)
             // Whether or not arguments of commands are revealed in console.log
             // Set this in options/options.json
             if (options.show_args_in_console === true)

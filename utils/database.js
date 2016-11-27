@@ -89,7 +89,7 @@ function toggleCommand(guild, command) {
             else {
                 let toggled = true, //Set to false if something toggled to false otherwise otherwise
                     disabled = JSON.parse(result[0].disabled_commands);
-                if (disabled.disabled_commands !== undefined) { //If disabled commands exists
+                if (disabled !== undefined) { //If disabled commands exists
                     //If command already disabled re-enable it
                     if (disabled.hasOwnProperty(command)) delete disabled[command];
                     else {
@@ -150,7 +150,7 @@ function toggleSetting(guild, settingChange, message, channel) {
                     if (message) { //If theres a message
                         serverSettings[settingChange] = message; //Sets the welcom/leavee message as the passed message variable
                         toggled = true;
-                        usageChannel = channel.id; //Sets the usagechannel as the channel in which the command is used
+                        usageChannel = channel; //Sets the usagechannel as the channel in which the command is used
                     } else delete serverSettings[settingChange]; //Disables welcome/leave message
                 }
                 //Saves to guild passing the passing the new usagechannel if applicable and the new server settings 

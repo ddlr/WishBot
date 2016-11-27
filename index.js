@@ -16,7 +16,7 @@ const Eris = require('eris'), //The bot's api library
     unflippedTables = ["┬─┬﻿ ︵ /(.□. \\\\)", "┬─┬ノ( º _ ºノ)", "┬─┬﻿ ノ( ゜-゜ノ)", "┬─┬ ノ( ^_^ノ)", "┬──┬﻿ ¯\\\\_(ツ)", "(╯°□°）╯︵ /(.□. \\\\)"];
 
 let urls = [''], //Twitch URLS the bot pulls from to link to in the Streaming Status
-    //Bot Constructor Creation check https://abal.moe/Eris/Client.html for more info
+    //Bot Constructor Creation check https://abal.moe/Eris/Client for more info
     bot = new Eris(options.token, {
         getAllUsers: true,
         messageLimit: 0,
@@ -24,7 +24,6 @@ let urls = [''], //Twitch URLS the bot pulls from to link to in the Streaming St
         autoReconnect: true,
         disableEveryone: true,
         disableEvents: {
-            VOICE_STATE_UPDATE: true,
             TYPING_START: true,
             GUILD_EMOJI_UPDATE: true,
             GUILD_INTEGRATIONS_UPDATE: true,
@@ -109,6 +108,7 @@ function evalInput(msg, args) {
     }
     //If result isn't undefined and it isn't an object return to channel
     if (result && typeof result !== "object") msg.channel.createMessage(result);
+    console.log(result)
 }
 
 //New Guild Member Event
@@ -135,8 +135,8 @@ bot.on("guildMemberRemove", (guild, member) => {
 
 //Replaces the correct strings with the correct variables then sends the message to the channel
 function sendGuildMessage(response, guild, member) {
-    if (!guild.name || (guild.channels.get(response.channel.toString()) && !guild.channels.get(response.channel.toString()).permissionsOf(bot.user.id).has('sendMessages'))) return;
-    bot.createMessage(response.channel, response.response.replace(/\[GuildName]/g, guild.name).replace(/\[ChannelName]/g, guild.channels.get(response.channel.toString()).name).replace(/\[ChannelMention]/g, guild.channels.get(response.channel.toString()).mention).replace(/\[UserName]/g, member.user.username).replace(/\[UserMention]/g, member.user.mention));
+    if (response.channel === '' || (response.channel !== '' && !bot.guilds.get(guild.id).channels.get(response.channel).permissionsOf(bot.user.id).has('sendMessages'))) return;
+    bot.createMessage(response.channel, response.response.replace(/\[GuildName]/g, guild.name).replace(/\[ChannelName]/g, guild.channels.get(response.channel).name).replace(/\[ChannelMention]/g, guild.channels.get(response.channel).mention).replace(/\[UserName]/g, member.user.username).replace(/\[UserMention]/g, member.user.mention));
 }
 
 //Guild Joined Event
@@ -179,7 +179,7 @@ function postGuildCount() {
             data: {
                 "server_count": bot.guilds.size
             }
-        }).catch(err => utils.fileLog(err));
+        }).catch(err => console.log(errorC(err)))
         //Post Guild Count to Carbonitex and if error log to file and console
         axios({
             method: 'post',
@@ -191,7 +191,7 @@ function postGuildCount() {
                 "key": options.carbon_key,
                 "servercount": bot.guilds.size
             }
-        }).catch(err => utils.fileLog(err));
+        }).catch(err => console.log(errorC(err)));
     }
 }
 

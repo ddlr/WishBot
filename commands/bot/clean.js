@@ -11,7 +11,7 @@ module.exports = {
             );
             /^\d+$/.test(args) ? args = parseInt(args) : args = 50; //Checks if args is a number(as well as it existing) and if so sets args to that number otherwise defaults to 50
             //Check to make sure the bot has access to the bulk delete endpoint which requires mangeMessages
-            if (msg.channel.permissionsOf(bot.user.id).has('manageMessages')) {
+            if (msg.channel.guild && msg.channel.permissionsOf(bot.user.id).has('manageMessages')) {
                 console.log(
                   miscC('clean:') +
                   ' bot has manageMessages permission'

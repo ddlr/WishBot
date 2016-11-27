@@ -11,8 +11,8 @@ setInterval(() => {
     if (usageUpdated) {
         usageUpdated = false;
         saveUsage();
-    } 
-}, 1000);
+    }
+}, 5000);
 
 //Updates usage timestamp to prevent guild from being marked as inactive
 exports.updateTimestamp = guild => {
@@ -32,7 +32,7 @@ exports.addToUsageCheck = guild => {
 //Remove Guild from usageCheck Database
 exports.removeFromUsageCheck = guild => {
     if (!guild || !guild.id) return; //If no guild recieved or guild doesn't have an id skip it
-    if (usageCheck.hasOwnProperty(guild.id)) delete usageCheck[guild.id]; //If in databse remove from database
+    if (usageCheck.hasOwnProperty(guild.id)) delete usageCheck[guild.id]; //If in database remove from database
     usageUpdated = true; //Update file
 }
 
