@@ -59,7 +59,7 @@ function bacon(args, blehp) {
             include: 133664,
             tags: 'cute,-comic,raridash,artist:raridashdoodles'
         }, fourhts: {
-            aliasOf: 'raridash'
+            aliasOf: 'fourths'
         }
     }
 
