@@ -1,3 +1,7 @@
+// MySQL commands I used to set this up are below — Chryssi
+// create table blehp.server_settings (guild_id CHAR(64) charset utf8, settings national varchar(256), disabled_commands national varchar(256));
+// create table blehp.channel_ignores (channel_id CHAR(64) charset utf8);
+
 const mysql = require('mysql'),
     fs = require('fs'),
     options = require('./../options/options.json'),
@@ -71,9 +75,10 @@ exports.unmuteChannel = channel => {
 
 //Check to see if the channel is currently being ignored(if its in the channel_ignores database table)
 exports.checkChannel = channel => {
-    return new Promise(resolve => {
+    return new Promise((resolve, reject) => {
         pool.query('SELECT * FROM channel_ignores WHERE channel_id = ' + channel, (err, result) => {
             if (err || result.length === 0) resolve(); //Resolve if error or if no result returned(not ignored)
+            else reject();
         });
     });
 }
