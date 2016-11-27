@@ -11,11 +11,19 @@ module.exports = {
             //Checks to see if the channel currently exists in the database or not(is muted if in database)
             Database.checkChannel(msg.channel.id).then(() => {
                 //If channel isn't in the database add it to the database(which mutes it)
+                console.log(
+                  miscC('channelmute:') +
+                  ' muting channel'
+                );
                 Database.muteChannel(msg.channel.id).then(() => resolve({
                     message: '🔇 Sucessfully muted commands in ' + msg.channel.mention + ' 🔇',
                     delete: true
                 }))
             }).catch(() => {
+                console.log(
+                  miscC('channelmute:') +
+                  ' unmuting channel'
+                );
                 //If the channel is in the database remove it(unmutes the channel)
                 Database.unmuteChannel(msg.channel.id).then(() => resolve({
                     message: '🔈 Sucessfully unmuted commands in ' + msg.channel.mention + ' 🔈',
