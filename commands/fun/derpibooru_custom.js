@@ -55,13 +55,16 @@ function bacon(args, blehp) {
     const filters = {
         default: {
             include: 133664
-        }, fourths: {
+        }, rdd: {
             include: 133664,
             tags: 'cute,-comic,raridash,artist:raridashdoodles'
+        }, fourths: {
+            aliasOf: 'fourhts'
         }, fourhts: {
-            aliasOf: 'fourths'
+            tags: '(raridash OR sciset OR taviscratch OR raripie OR appleshy OR hoodies OR twinkie OR rarilight OR thoraxspike) AND cute AND NOT comic'
         }
     }
+
 
     // Whether to continue making requests to Derpibooru
     // Set to false when somethingWentWrong() is called
