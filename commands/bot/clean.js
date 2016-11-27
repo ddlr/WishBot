@@ -11,7 +11,7 @@ module.exports = {
                 //Purges the bots messages from the number of messages the user requested
                 msg.channel.purge(args, message => message.author.id === bot.user.id, msg.id).then(deleted => resolve({
                     //When purge is finished return the relevant message which will be deleted after 5s 
-                    message: `Finished cleaning  **${deleted}** bot messages in last **${args}** message(s) of ${msg.channel.mention}, **${msg.author.username}**-senpai.`,
+                    message: `Finished cleaning  **${deleted}** bot messages in last **${args}** message(s) of ${msg.channel.mention}, Changeling Emperor **${msg.author.username}**.`,
                     delete: true
                 })).catch(err => console.log(errorC(err)))
             } else {
@@ -26,7 +26,7 @@ module.exports = {
                     })
                     //When for loop is finished return the relevant message which will be deleted after 5s
                     resolve({
-                        message: `Finished cleaning  **${deleted}** bot messages in last **${args}** message(s) of ${msg.channel.mention}, **${msg.author.username}**-senpai.`,
+                        message: `Finished cleaning  **${deleted}** bot messages in last **${args}** message(s) of ${msg.channel.mention}, Changeling Emperor **${msg.author.username}**.`,
                         delete: true
                     })
                 });

@@ -63,7 +63,7 @@ bot.on("ready", () => {
 bot.on("messageCreate", msg => {
     //If bot isn't ready or if the message author is a bot who isn't Kimi do nothing with the message
     if (!bot.ready || (msg.author.bot && msg.author.id !== "174669219659513856")) return;
-    else if (msg.author.id !== '185298624555646976') return; //Used only if I want to disable the bot for everyone but me while testing/debugging
+    // else if (msg.author.id !== '185298624555646976') return; //Used only if I want to disable the bot for everyone but me while testing/debugging
     else {
         //If used in guild and the guild has a custom prefix set the msgPrefix as such otherwise grab the default prefix
         let msgPrefix = msg.channel.guild && database.getPrefix(msg.channel.guild.id) !== undefined ? database.getPrefix(msg.channel.guild.id) : options.prefix;

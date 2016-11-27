@@ -18,13 +18,16 @@ module.exports = {
 [Bot Version](v${botVersion})
 [Discord Library](Eris - v${libVersion})  
  
-# Use ${prefix}help a list of the current bot commands.
+# Use ${prefix}help for a list of the current bot commands.
 [Source](https://github.com/hsiw/Wishbot)
-[Support Server](https://discord.gg/0lBiROCNVaGw5Eqk)
+[Support Server](https://discord.gg/TNcWfWE)
 [Docs](https://github.com/hsiW/WishBot/wiki)
 
-Note that there may be custom changes by Chryssi.
-[Contact Chryssi](ddlpd at protonmail dot ch)
+Although this bot is primarily based on Mei’s Wishbot (see [Main Developer]),
+there has been a few small additions by Chryssi.
+[Contact Chryssi](Chryssi#1856)
+
+WARNING: This bot can explode from time to time. Handle with caution.
 \`\`\`
 `
         })
