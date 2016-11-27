@@ -49,6 +49,18 @@ ${this.aliases !== null ? '**Aliases:** '+(this.aliases.map(a=> "\`"+a+"\`").joi
                     disableEveryone: response.disableEveryone != null ? response.disableEveryone : undefined //Allow/deny use of @everyone or @here in sendmessages
                 }, response.upload).then(message => {
                     if (response.edit) message.edit(response.edit(message)) //Edit sent message 
+                    // Similar to response.edit but with support for returning
+                    // promises, e.g. in commands/fun/derpibooru_custom.js:
+                    //   edit_async: new Promise(...)
+                    // -- Chryssi
+                    else if (response.edit_async) {
+                        console.log('response.edit_async: ' + response.edit_async);
+                        let a = response.edit_async;
+                        a.then((resolve_message) => {
+                            console.log('Resolving edit_async promise.'); message.edit(resolve_message)
+                        });
+                    }
+
                     if (response.delete) utils.messageDelete(message); //Check for delete sent message
                 })
             }).catch(err => utils.fileLog(err)); //Log to console and file if errored
