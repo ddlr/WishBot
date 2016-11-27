@@ -14,6 +14,7 @@ module.exports = class Command {
         this.togglable = !(settings.togglable === false); //Wheather the command is toggable or not with the toggle command(true by default)
         this.aliases = settings.aliases || null //Array of aliases the commmand has(none by default)
         this.privateGuild = settings.privateGuild || null; //Array of guilds the command is resticted to(no restriction by default)
+        this.permissions = settings.permissions || {};
     }
     //The template help message which is used in `help [cmdName]`
     get help() {
@@ -22,7 +23,7 @@ __**Command Info for:**__ \`${this.name}\`
 
 ${this.usage}
 
-${this.aliases !== null ? '**Aliases:** '+(this.aliases.map(a=> "\`"+a+"\`").join(', ') +'\n') : ''}**Cooldown:** \`${this.cooldown}s\` | **Delete on Use:** \`${this.delete}\` | **DM:** \`${this.dm}\` | **Uses:** \`${this.execTimes}\``;
+${this.aliases !== null ? '**Aliases:** ' + this.aliases.map(a => "\`"+a+"\`").join(', ') +'\n' : ''}${this.permissions != {} ? '**Permissions:** ' + Object.keys(this.permissions).map(p => "\`"+p+"\`").join(', ') +'\n' : ''}**Cooldown:** \`${this.cooldown}s\` | **Delete on Use:** \`${this.delete}\` | **DM:** \`${this.dm}\` | **Uses:** \`${this.execTimes}\``;
     }
 
     //Function to get the current cooldown time for the user(is used when a command is on cooldown to show the time left til off cooldown)
@@ -40,7 +41,7 @@ ${this.aliases !== null ? '**Aliases:** '+(this.aliases.map(a=> "\`"+a+"\`").joi
             this.run(msg, args, bot).then(response => {
                 if (response.embed !== undefined && msg.channel.guild && !(msg.channel.permissionsOf(bot.user.id).has('embedLinks'))) return; //If command needs embed permissions and bot doesn't have it
                 //Main Processing of Command(uses Promises)
-                //Commands return a Promise which can contain a 'Message, 'Upload' & 'Embed' to send message being the message content, upload being whatever file you'd like to, embed being a discord embed object
+                //Commands return a Promise which can contain a 'message, 'upload', 'embed' or 'disableEveryone' to send message being the message content, upload being whatever file you'd like to, embed being a discord embed object or allow the message to mention everyone with @everyone
                 //Commands also can return a edit function which allows you to edit messages while also taking the inital sent message object
                 //They can also return a delete after 5s boolean which deletes the sent message after 5s
                 msg.channel.createMessage({
@@ -91,5 +92,21 @@ ${this.aliases !== null ? '**Aliases:** '+(this.aliases.map(a=> "\`"+a+"\`").joi
             return false;
         else //If all else fails return true
             return true;
+    }
+
+    //Used to check if the user has the correct permissions for the command if it has any additonal permissions
+    permissionsCheck(msg) {
+        var hasPermssion = true,
+            permissionKeys = Object.keys(this.permissions);
+        if (permissionKeys.length > 0) {
+            var userPermissions = msg.channel.permissionsOf(msg.author.id).json;
+            for (var key of permissionKeys) {
+                if (this.permissions[key] !== userPermissions[key]) {
+                    hasPermssion = false;
+                    break;
+                }
+            }
+        }
+        return hasPermssion;
     }
 }
