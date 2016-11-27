@@ -59,6 +59,9 @@
     }
   },
   "scripts": {
-    "start": "node index.js"
+    "start": "node index.js",
+    "db_start": "sudo systemctl start mariadb.service",
+    "db_stop": "sudo systemctl stop mariadb.service",
+    "db_restart": "sudo systemctl restart mariadb.service"
   }
 }
