@@ -1,21 +1,20 @@
 const Eris = require('eris'), //The bot's api library
-    chalk = require('chalk'), //Used to make the console have pretty colours
+    colour = new(require('chalk')).constructor({ //Used to make the console have pretty colours
+        enabled: true //This isn't normally needed but PM2 doesn't work with chalk unless I do this
+    }),
     fs = require('fs'), //For reading/writing to a file
     axios = require('axios'), //HTTP client for requests to and from websites
-    options = require('./options/options.json'),
-    commandLoader = require('./utils/commandLoader.js'),
-    utils = require('./utils/utils.js'),
-    database = require('./utils/database.js'),
-    processCmd = require('./utils/commandHandler.js'),
-    usageChecker = require('./utils/usageChecker.js'),
-    //This isn't normally needed but PM2 doesn't work with chalk unless I do this
-    colour = new chalk.constructor({
-        enabled: true
-    }),
-    //Unflipped tables for use with the auto-table-unfipper
-    unflippedTables = ["┬─┬﻿ ︵ /(.□. \\\\)", "┬─┬ノ( º _ ºノ)", "┬─┬﻿ ノ( ゜-゜ノ)", "┬─┬ ノ( ^_^ノ)", "┬──┬﻿ ¯\\\\_(ツ)", "(╯°□°）╯︵ /(.□. \\\\)"];
+    reload = require('require-reload')(require);
 
-let urls = [''], //Twitch URLS the bot pulls from to link to in the Streaming Status
+var options = reload('./options/options.json'),
+    commandLoader = reload('./utils/commandLoader.js'),
+    utils = reload('./utils/utils.js'),
+    database = reload('./utils/database.js'),
+    processCmd = reload('./utils/commandHandler.js'),
+    usageChecker = reload('./utils/usageChecker.js'),
+    //Unflipped tables for use with the auto-table-unfipper
+    unflippedTables = ["┬─┬﻿ ︵ /(.□. \\\\)", "┬─┬ノ( º _ ºノ)", "┬─┬﻿ ノ( ゜-゜ノ)", "┬─┬ ノ( ^_^ノ)", "┬──┬﻿ ¯\\\\_(ツ)", "(╯°□°）╯︵ /(.□. \\\\)"],
+    urls = [''], //Twitch URLS the bot pulls from to link to in the Streaming Status
     //Bot Constructor Creation check https://abal.moe/Eris/docs/Client for more info
     bot = new Eris(options.token, {
         getAllUsers: true,
@@ -51,9 +50,9 @@ bot.on("ready", () => {
     //Sets the status's of every shard seperately
     utils.setRandomStatus(bot, urls)
     //This stuff below is sent to the console when the bot is ready
-    console.log(botC(bot.user.username + " is now Ready."));
-    console.log('Current # of Commands Loaded: ' + warningC(Object.keys(commands).length))
-    console.log("Users: " + userC(bot.users.size) + " | Channels: " + channelC(Object.keys(bot.channelGuildMap).length) + " | Servers: " + guildC(bot.guilds.size))
+    console.log(`${botC(bot.user.username + ' is now Ready with')} ${errorC(bot.shards.size)} ${botC('Shards.')}`);
+    console.log(`Current # of Commands Loaded: ${warningC(Object.keys(commands).length)}`)
+    console.log(`Users: ${userC(bot.users.size)} | Channels: ${channelC(Object.keys(bot.channelGuildMap).length)} | Guilds: ${guildC(bot.guilds.size)}`)
     //Run inactivity checker and output the number of inactive servers
     usageChecker.checkInactivity(bot).then(response => console.log(botC(response))).catch(err => console.log(errorC(err)));
 })
@@ -68,9 +67,11 @@ bot.on("messageCreate", msg => {
         let msgPrefix = msg.channel.guild && database.getPrefix(msg.channel.guild.id) !== undefined ? database.getPrefix(msg.channel.guild.id) : options.prefix;
         //Use Eval on the message if it starts with sudo and used by Mei
         if (msg.content.split(" ")[0] === "sudo" && msg.author.id === "87600987040120832") {
-            evalInput(msg, msg.content.substring((msg.content.split(" ")[0].substring(1)).length + 2));
+            evalInput(msg, msg.content.split(" ").slice(1).join(' '));
             return;
         }
+        //Hot reload all possible files
+        if (msg.content.startsWith(options.prefix + 'reload')) reloadModules(msg);
         //If stuff that isn't a command is used in a PM treat it as using cleverbot by adding the correct prefix as well as the 'chat' command text to the message
         if (!msg.channel.guild && !msg.content.startsWith(options.prefix)) msg.content = msgPrefix + "chat " + msg.content;
         //If used in a Guild
@@ -78,8 +79,8 @@ bot.on("messageCreate", msg => {
             //If bot cannot send messages in the current channel
             if (!msg.channel.permissionsOf(bot.user.id).has('sendMessages')) return;
             //If Message is a tableFlip and the Guild has tableflip(tableunflip) on return an unflipped table
-            if (msg.content === "(╯°□°）╯︵ ┻━┻") database.checkSetting(msg.channel.guild.id, 'tableflip').then(() => bot.createMessage(msg.channel.id, unflippedTables[~~(Math.random() * (unflippedTables.length))])).catch(err => utils.fileLog(err))
-                //Check if message starts with a bot user mention and if so replace with the correct prefix and the 'chat' command text
+            if (msg.content === "(╯°□°）╯︵ ┻━┻") database.checkSetting(msg.channel.guild.id, 'tableflip').then(() => bot.createMessage(msg.channel.id, unflippedTables[~~(Math.random() * (unflippedTables.length))])).catch(err => utils.fileLog(err));
+            //Check if message starts with a bot user mention and if so replace with the correct prefix and the 'chat' command text
             if (msg.content.replace(/<@!/, "<@").startsWith(bot.user.mention)) msg.content = msg.content.replace(/<@!/g, "<@").replace(bot.user.mention, msgPrefix + "chat");
             //Prefix command override so that prefix can be used with the default command prefix to prevent forgotten prefixes
             if ((msg.content.startsWith(options.prefix + 'setprefix') || msg.content.startsWith(options.prefix + 'checkprefix')) && msgPrefix !== options.prefix) msg.content = msg.content.replace(options.prefix, msgPrefix)
@@ -88,7 +89,7 @@ bot.on("messageCreate", msg => {
         if (msg.content.startsWith(msgPrefix)) {
             let formatedMsg = msg.content.substring(msgPrefix.length, msg.content.length), //Format message to remove command prefix
                 cmdTxt = formatedMsg.split(" ")[0].toLowerCase(), //Get command from the formated message
-                args = formatedMsg.substring((formatedMsg.split(" ")[0]).length + 1); //Get arguments from the formated message
+                args = formatedMsg.split(' ').slice(1).join(' '); //Get arguments from the formated message
             if (commandAliases.hasOwnProperty(cmdTxt)) cmdTxt = commandAliases[cmdTxt]; //If the cmdTxt is an alias of the command
             if (cmdTxt === 'channelmute') processCmd(msg, args, commands[cmdTxt], bot); //Override channelCheck if cmd is channelmute to unmute a muted channel
             //Check if a Command was used and runs the corresponding code depending on if it was used in a Guild or not, if in guild checks for muted channel and disabled command
@@ -107,7 +108,7 @@ function evalInput(msg, args) {
         msg.channel.createMessage("```" + e + "```");
     }
     //If result isn't undefined and it isn't an object return to channel
-    if (result && typeof result !== "object") msg.channel.createMessage(result);
+    if (result && typeof result !== 'object') msg.channel.createMessage(result);
     console.log(result)
 }
 
@@ -161,7 +162,7 @@ bot.on('guildDelete', guild => {
 
 //Load Commands then Connect(Logs any errors to console and file)
 commandLoader.load().then(() => {
-    bot.connect().then(console.log(warningC("Connecting with Token")))
+    bot.connect().then(console.log(warningC('Connecting with Token')))
 }).catch(err => utils.fileLog(err));
 
 //Posts Guild Count to Discord Bots and Carbonitex
@@ -171,7 +172,7 @@ function postGuildCount() {
         //Post Guild Count to Discord Bots and if error log to file and console
         axios({
             method: 'post',
-            url: "https://bots.discord.pw/api/bots/" + bot.user.id + "/stats",
+            url: `https://bots.discord.pw/api/bots/${bot.user.id}/stats`,
             headers: {
                 "Authorization": options.bot_key,
                 "content-type": "application/json"
@@ -192,6 +193,27 @@ function postGuildCount() {
                 "servercount": bot.guilds.size
             }
         }).catch(err => console.log(errorC(err)));
+    }
+}
+
+//Hot Reload ALl Modules
+function reloadModules(msg) {
+    try {
+        //Delete Global Command Objects from Cache
+        delete commands;
+        delete commandAliases;
+        commandHandler = reload.emptyCache('./utils/commandHandler.js');
+        options = reload.emptyCache('./options/options.json');
+        utils = reload.emptyCache('./utils/utils.js');
+        database = reload.emptyCache('./utils/database.js');
+        processCmd = reload.emptyCache('./utils/commandHandler.js');
+        usageChecker = reload.emptyCache('./utils/usageChecker.js');
+        commandLoader.load().then(() => {
+            console.log(botC('@' + bot.user.username + ': ') + errorC('Successfully Reloaded All Modules'));
+            msg.createMessage('Successfully Reloaded All Modules').then(message => utils.messageDelete(message))
+        });
+    } catch (e) {
+        console.log(errorC('Error Reloading Modules: ' + e))
     }
 }
 
@@ -231,18 +253,18 @@ bot.on("warn", (warn, id) => {
 
 //Shard Resume Event
 bot.on('shardResume', id => {
-    console.log(botC("@" + bot.user.username) + " - " + warningC("SHARD #" + id + "RECONNECTED"));
+    console.log(`${botC("@" + bot.user.username)} - ${warningC("SHARD #" + id + "RECONNECTED")}`);
 })
 
 //Shard Disconnect Event
 bot.on("shardDisconnect", (err, id) => {
-    console.log(botC("@" + bot.user.username) + " - " + warningC("SHARD #" + id + "DISCONNECTED"));
+    console.log(`${botC("@" + bot.user.username)} - ${warningC("SHARD #" + id + "DISCONNECTED")}`);
     utils.fileLog(err); //Logs reason/error to file and console
 })
 
 //Whole Bot Disconnect Event
 bot.on("disconnect", err => {
-    console.log(botC("@" + bot.user.username) + " - " + errorC("DISCONNECTED"));
+    console.log(`${botC("@" + bot.user.username)} - ${errorC("DISCONNECTED")}`);
     utils.fileLog(err); //Logs Disconnect reason/error to file and console
     throw 'Bot Disconnected'
 })

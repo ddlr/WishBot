@@ -14,7 +14,7 @@ module.exports = class Command {
         this.togglable = !(settings.togglable === false); //Wheather the command is toggable or not with the toggle command(true by default)
         this.aliases = settings.aliases || null //Array of aliases the commmand has(none by default)
         this.privateGuild = settings.privateGuild || null; //Array of guilds the command is resticted to(no restriction by default)
-        this.permissions = settings.permissions || {};
+        this.permissions = settings.permissions || null; //Used to define permissions the command requires(none by default)
     }
     //The template help message which is used in `help [cmdName]`
     get help() {
@@ -23,12 +23,7 @@ __**Command Info for:**__ \`${this.name}\`
 
 ${this.usage}
 
-${this.aliases !== null ? '**Aliases:** ' + this.aliases.map(a => "\`"+a+"\`").join(', ') +'\n' : ''}${this.permissions != {} ? '**Permissions:** ' + Object.keys(this.permissions).map(p => "\`"+p+"\`").join(', ') +'\n' : ''}**Cooldown:** \`${this.cooldown}s\` | **Delete on Use:** \`${this.delete}\` | **DM:** \`${this.dm}\` | **Uses:** \`${this.execTimes}\``;
-    }
-
-    //Function to get the current cooldown time for the user(is used when a command is on cooldown to show the time left til off cooldown)
-    cooldownTime(user) {
-        return ((this.currentCooldown[user] + (this.cooldown * 1000)) - Date.now()) / 1000;
+${this.aliases !== null ? '**Aliases:** ' + this.aliases.map(a => "\`"+a+"\`").join(', ') +'\n' : ''}${this.permissions !== null ? '**Permissions:** ' + Object.keys(this.permissions).map(p => "\`"+p+"\`").join(', ') +'\n' : ''}**Cooldown:** \`${this.cooldown}s\` | **Delete on Use:** \`${this.delete}\` | **DM:** \`${this.dm}\` | **Uses:** \`${this.execTimes}\``;
     }
 
     //Command Processing
@@ -63,23 +58,29 @@ ${this.aliases !== null ? '**Aliases:** ' + this.aliases.map(a => "\`"+a+"\`").j
                     }
 
                     if (response.delete) utils.messageDelete(message); //Check for delete sent message
-                })
-            }).catch(err => utils.fileLog(err)); //Log to console and file if errored
+                }).catch(err => utils.fileLog(err)); //Log to console and file if errored
+            })
         })
     }
 
     //Cooldown Check(returns true if the command shouldn't be processed)
     cooldownCheck(user) {
         //If the user has a currentCooldown
-        if (this.currentCooldown.hasOwnProperty(user)) //If the user last used the command within the cooldown period return true
+        if (this.currentCooldown.hasOwnProperty(user))
             return true;
+        //Set the currentCooldown to now and remove from object when cooldown period is over
         else {
             this.currentCooldown[user] = Date.now();
             setTimeout(() => {
-                delete this.currentCooldown[user]
+                delete this.currentCooldown[user];
             }, this.cooldown * 1000)
             return false;
         }
+    }
+
+    //Function to get the current cooldown time for the user(is used when a command is on cooldown to show the time left til off cooldown)
+    cooldownTime(user) {
+        return ((this.currentCooldown[user] + (this.cooldown * 1000)) - Date.now()) / 1000;
     }
 
     //Private Server Command Check(returns true if command shouldn't be processed)
@@ -96,10 +97,10 @@ ${this.aliases !== null ? '**Aliases:** ' + this.aliases.map(a => "\`"+a+"\`").j
 
     //Used to check if the user has the correct permissions for the command if it has any additonal permissions
     permissionsCheck(msg) {
-        var hasPermssion = true,
-            permissionKeys = Object.keys(this.permissions);
-        if (permissionKeys.length > 0) {
-            var userPermissions = msg.channel.permissionsOf(msg.author.id).json;
+        var hasPermssion = true;
+        if (this.permissions != null) {
+            var permissionKeys = Object.keys(this.permissions),
+                userPermissions = msg.channel.permissionsOf(msg.author.id).json;
             for (var key of permissionKeys) {
                 if (this.permissions[key] !== userPermissions[key]) {
                     hasPermssion = false;

@@ -4,7 +4,7 @@ const admins = require('./../options/admins.json'), //List of Admin ID's which o
 
 module.exports = (msg, args, cmd, bot) => {
     //Checks for Admin command types
-    if (cmd.type === "admin" && admins.indexOf(msg.author.id) === -1) {
+    if (cmd.type === "admin" && !admins.includes(msg.author.id)) {
         //Command Logging in Guilds
         if (msg.channel.guild) {
             console.log(
