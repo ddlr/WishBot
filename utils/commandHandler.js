@@ -55,7 +55,7 @@ module.exports = (msg, args, cmd, bot) => {
             return;
         }
         //Cooldown check, admins ignore cooldowns
-        else if (!(admins.indexOf(msg.author.id) > -1) && cmd.cooldownCheck(msg.author.id)) {
+        else if (!admins.includes(msg.author.id) && cmd.cooldownCheck(msg.author.id)) {
             bot.createMessage(msg.channel.id, `\`${cmd.name}\` is currently on cooldown for ${cmd.cooldownTime(msg.author.id).toFixed(1)}s`);
         }
         //Process the command

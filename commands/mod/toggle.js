@@ -1,13 +1,13 @@
-const Database = require('./../../utils/database.js');
+var Database = require('./../../utils/database.js');
 
 module.exports = {
     usage: '**Toggle commands** on/off. **Not all** commands are togglable. Check their individual **help messages for more info**.\n\n`toggle [command]`',
     dm: false,
     togglable: false,
+    delete: true,
     permissions: {
         'manageGuild': true
     },
-    cooldown: 5,
     process: (msg, args) => {
         return new Promise(resolve => {
             let command = args.toLowerCase(); //Convert args to lowercase for easier use

@@ -1,14 +1,14 @@
-const Database = require('./../../utils/database.js');
+var Database = require('./../../utils/database.js');
 
 module.exports = {
     usage: '**Toggles all commands** from **being used in the channel** in which this command is used. **Overrides the muted channel** condition so it can be used in a muted channel.',
     aliases: ['cmute'],
     dm: false,
     togglable: false,
+    delete: true,
     permissions: {
         'manageGuild': true
     },
-    cooldown: 5,
     process: msg => {
         return new Promise(resolve => {
             //Checks to see if the channel currently exists in the database or not(is muted if in database)

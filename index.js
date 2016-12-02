@@ -12,6 +12,7 @@ var options = reload('./options/options.json'),
     database = reload('./utils/database.js'),
     processCmd = reload('./utils/commandHandler.js'),
     usageChecker = reload('./utils/usageChecker.js'),
+    playing = reload('./lists/playing.json'), //List of playing status's for the bot to use
     //Unflipped tables for use with the auto-table-unfipper
     unflippedTables = ["┬─┬﻿ ︵ /(.□. \\\\)", "┬─┬ノ( º _ ºノ)", "┬─┬﻿ ノ( ゜-゜ノ)", "┬─┬ ノ( ^_^ノ)", "┬──┬﻿ ¯\\\\_(ツ)", "(╯°□°）╯︵ /(.□. \\\\)"],
     urls = [''], //Twitch URLS the bot pulls from to link to in the Streaming Status
@@ -19,9 +20,7 @@ var options = reload('./options/options.json'),
     bot = new Eris(options.token, {
         getAllUsers: true,
         messageLimit: 0,
-        maxShards: 1,
-        autoReconnect: true,
-        disableEveryone: true,
+        maxShards: 1, //Set to lower if hosting yourself as 8 is overkill in most cases(its even overkill for Yuki-chan now)
         disableEvents: {
             TYPING_START: true,
             GUILD_EMOJI_UPDATE: true,
@@ -48,7 +47,7 @@ errorC = colour.red.bold;
 //Ready Event
 bot.on("ready", () => {
     //Sets the status's of every shard seperately
-    utils.setRandomStatus(bot, urls)
+    setRandomStatus()
     //This stuff below is sent to the console when the bot is ready
     console.log(`${botC(bot.user.username + ' is now Ready with')} ${errorC(bot.shards.size)} ${botC('Shards.')}`);
     console.log(`Current # of Commands Loaded: ${warningC(Object.keys(commands).length)}`)
@@ -88,8 +87,8 @@ bot.on("messageCreate", msg => {
         //If the message stats with the set prefix
         if (msg.content.startsWith(msgPrefix)) {
             let formatedMsg = msg.content.substring(msgPrefix.length, msg.content.length), //Format message to remove command prefix
-                cmdTxt = formatedMsg.split(" ")[0].toLowerCase(), //Get command from the formated message
-                args = formatedMsg.split(' ').slice(1).join(' '); //Get arguments from the formated message
+                cmdTxt = formatedMsg.split(" ")[0].toLowerCase(), //Get command from the formatted message
+                args = formatedMsg.split(' ').slice(1).join(' '); //Get arguments from the formatted message
             if (commandAliases.hasOwnProperty(cmdTxt)) cmdTxt = commandAliases[cmdTxt]; //If the cmdTxt is an alias of the command
             if (cmdTxt === 'channelmute') processCmd(msg, args, commands[cmdTxt], bot); //Override channelCheck if cmd is channelmute to unmute a muted channel
             //Check if a Command was used and runs the corresponding code depending on if it was used in a Guild or not, if in guild checks for muted channel and disabled command
@@ -119,7 +118,7 @@ bot.on("guildMemberAdd", (guild, member) => {
         //Checks to see if the guild has a welcome set
         database.checkSetting(guild.id, 'welcome').then(response => {
             sendGuildMessage(response, guild, member);
-        }).catch(err => utils.fileLog(err));
+        }).catch(err => console.log(errorC(err)));
     }
 })
 
@@ -130,14 +129,14 @@ bot.on("guildMemberRemove", (guild, member) => {
         //Checks to see if the guild has a leave set
         database.checkSetting(guild.id, 'leave').then(response => {
             sendGuildMessage(response, guild, member);
-        }).catch(err => utils.fileLog(err))
+        }).catch(err => console.log(errorC(err)))
     }
 })
 
 //Replaces the correct strings with the correct variables then sends the message to the channel
 function sendGuildMessage(response, guild, member) {
     if (response.channel === '' || (response.channel !== '' && !bot.guilds.get(guild.id).channels.get(response.channel).permissionsOf(bot.user.id).has('sendMessages'))) return;
-    bot.createMessage(response.channel, response.response.replace(/\[GuildName]/g, guild.name).replace(/\[ChannelName]/g, guild.channels.get(response.channel).name).replace(/\[ChannelMention]/g, guild.channels.get(response.channel).mention).replace(/\[UserName]/g, member.user.username).replace(/\[UserMention]/g, member.user.mention));
+    bot.createMessage(response.channel, response.response.replace(/\[GuildName]/g, guild.name).replace(/\[ChannelName]/g, guild.channels.get(response.channel).name).replace(/\[ChannelMention]/g, guild.channels.get(response.channel).mention).replace(/\[UserName]/g, member.user.username).replace(/\[UserMention]/g, member.user.mention)).catch(err => console.log(errorC('err')));
 }
 
 //Guild Joined Event
@@ -196,13 +195,29 @@ function postGuildCount() {
     }
 }
 
+//Set random bot status(includes random game as well as random streaming url)
+// Modified by Chryssi
+exports.setRandomStatus = (bot, urls) => {
+    bot.shards.forEach(shard => {
+        shard.editStatus({
+            name: playing[~~(Math.random() * (playing.length))],
+            // 0: default, 1: Twitch streaming
+            type: 0,
+            url: urls[~~(Math.random() * (urls.length))]
+        });
+    })
+}
+
 //Hot Reload ALl Modules
 function reloadModules(msg) {
     try {
-        //Delete Global Command Objects from Cache
-        delete commands;
-        delete commandAliases;
-        commandHandler = reload.emptyCache('./utils/commandHandler.js');
+        utils = reload('./utils/utils.js');
+        database = reload('./utils/database.js');
+        options = reload('./options/options.json');
+        processCmd = reload('./utils/commandHandler.js');
+        usageChecker = reload('./utils/usageChecker.js');
+        commandHandler = reload('./utils/commandHandler.js');
+        playing = reload('./lists/playing.json');
         commandLoader.load().then(() => {
             console.log(botC('@' + bot.user.username + ': ') + errorC('Successfully Reloaded All Modules'));
             msg.channel.createMessage('Successfully Reloaded All Modules').then(message => utils.messageDelete(message))
@@ -213,7 +228,7 @@ function reloadModules(msg) {
 }
 
 //Changes the bots status every 10mins
-setInterval(() => utils.setRandomStatus(bot, urls), 6e+5);
+setInterval(() => setRandomStatus(), 6e+5);
 
 //Changes the bots avatar every 2hrs
 setInterval(() => {
@@ -239,9 +254,9 @@ setInterval(() => {
 bot.on("error", err => utils.fileLog(err)) //Logs error to file and console
 
 //Bot Warn Event(Outputs issues that aren't major)
-bot.on("warn", (warn, id) => {
+/*bot.on("warn", (warn, id) => {
     console.log(warningC(warn, id));
-})
+})*/
 
 //Debug event only used to find errors and usually disabled
 //bot.on("debug", console.log)

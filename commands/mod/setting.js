@@ -1,4 +1,4 @@
-const Database = require('./../../utils/database.js');
+var Database = require('./../../utils/database.js');
 
 module.exports = {
     usage: `Used to configure/toggle settings including **automated table unflipping** and **welcome/leave messages**, both of which are off by default. **Welcome/leave messages** are sent in the **channel** in which this command is last used and can be toggled off by leaving the message field **blank**.
@@ -18,12 +18,10 @@ module.exports = {
 setting welcome/leave [message] - Sets welcome/leave to 'message'\``,
     aliases: ['set'],
     dm: false,
-    delete: false,
     togglable: false,
     permissions: {
         'manageGuild': true
     },
-    cooldown: 5,
     process: (msg, args) => {
         return new Promise(resolve => {
             //If args are tableflip then toggle the tableflip setting
