@@ -51,10 +51,34 @@ bot.on("ready", () => {
     //This stuff below is sent to the console when the bot is ready
     console.log(`${botC(bot.user.username + ' is now Ready with')} ${errorC(bot.shards.size)} ${botC('Shards.')}`);
     console.log(`Current # of Commands Loaded: ${warningC(Object.keys(commands).length)}`)
-    console.log(`Users: ${userC(bot.users.size)} | Channels: ${channelC(Object.keys(bot.channelGuildMap).length)} | Guilds: ${guildC(bot.guilds.size)}`)
+    console.log(
+        `Users: ${userC(bot.users.size)} | ` +
+        `Channels: ${channelC(Object.keys(bot.channelGuildMap).length)} | ` +
+        `Guilds: ${guildC(bot.guilds.size)}`
+    );
     //Run inactivity checker and output the number of inactive servers
     usageChecker.checkInactivity(bot).then(response => console.log(botC(response))).catch(err => console.log(errorC(err)));
-})
+});
+
+// List of command aliases run without guild prefixes when Changeling Bot is
+// mentioned. Also run without needing Changeling Bot to be mentioned in direct
+// messages (PMs or private messages).
+var mentionCommands = {
+    '❤': 'respond heart',
+    '💙': 'respond blue heart',
+    '💚': 'respond green heart',
+    '💛': 'respond yellow heart',
+    '💜': 'respond purple heart',
+    'thank you': 'respond thank you',
+    'thank you,': 'respond thank you',
+    'blehp': 'respond blehp'
+};
+
+// List of commands that are run if the message matches an entry.
+var nonPrefixedCommands = {
+    'gimme fluff': 'dpc cute',
+    'gimme cute': 'dpc cute'
+}
 
 //On Message Creation Event
 bot.on("messageCreate", msg => {
@@ -64,26 +88,108 @@ bot.on("messageCreate", msg => {
     else {
         //If used in guild and the guild has a custom prefix set the msgPrefix as such otherwise grab the default prefix
         let msgPrefix = msg.channel.guild && database.getPrefix(msg.channel.guild.id) !== undefined ? database.getPrefix(msg.channel.guild.id) : options.prefix;
+
         //Use Eval on the message if it starts with sudo and used by Mei
-        if (msg.content.split(" ")[0] === "sudo" && msg.author.id === "87600987040120832") {
+        // Changes by Chryssi: change user ID to Chryssi
+        if (msg.content.split(" ")[0] === "sudo" && msg.author.id === "185298624555646976") {
             evalInput(msg, msg.content.split(" ").slice(1).join(' '));
             return;
         }
+
         //Hot reload all possible files
         if (msg.content.startsWith(options.prefix + 'reload')) reloadModules(msg);
-        //If stuff that isn't a command is used in a PM treat it as using cleverbot by adding the correct prefix as well as the 'chat' command text to the message
-        if (!msg.channel.guild && !msg.content.startsWith(options.prefix)) msg.content = msgPrefix + "chat " + msg.content;
+
+        // If Changeling Bot is mentioned and prefix-less command is an alias as
+        // stated in mentionCommands.
+        // Note that this is above the
+        //     !msg.channel.guild && !msg.content.startsWith(options.prefix)
+        // if statement, which is important to ensure that messages like
+        //     @Changeling Bot :heart:
+        // in a PM is still passed to this if statement first.
+        //
+        // Examples (first two are processed as ~respond heart, while last
+        // three are processed as ~respond thank you):
+        //     @Changeling Bot :heart:
+        //     :heart: @Changeling Bot
+        //     thank you@Changeling Bot
+        //     @Changeling Bot                  thank you
+        //
+        // Note that they can also be messages where the text and mention are on
+        // separate lines,
+        // like this:
+        //     @Changeling Bot
+        //     thank you
+        if (
+            ! msg.content.startsWith(options.prefix) &&
+            msg.content.includes(bot.user.mention) &&
+            mentionCommands.hasOwnProperty(
+                msg.content.replace(bot.user.mention, '').trim()
+            )
+        ) {
+            msg.content =
+                msgPrefix +
+                mentionCommands[
+                    msg.content.replace(bot.user.mention, '').trim()
+                ];
+        }
+
+        // If the message is a specific string (e.g. “gimme fluff”) that is an
+        // alias of a command (e.g. “~dpc cute”), convert it.
+        if (nonPrefixedCommands.hasOwnProperty(msg.content)) {
+            msg.content = msgPrefix + nonPrefixedCommands[msg.content];
+        }
+
+        // If stuff that isn't a command is used in a PM treat it as using
+        // cleverbot by adding the correct prefix as well as the 'chat' command
+        // text to the message
+        if (
+            ! msg.channel.guild &&
+            ! msg.content.startsWith(options.prefix) &&
+            ! nonPrefixedCommands.hasOwnProperty(msg.content)
+        ) {
+            // … except if command is a non-prefixed command alias
+            if (mentionCommands.hasOwnProperty(msg.content)) {
+                msg.content = msgPrefix + mentionCommands[msg.content];
+            } else {
+                msg.content = msgPrefix + "chat " + msg.content;
+            }
+        }
+
         //If used in a Guild
         if (msg.channel.guild) {
             //If bot cannot send messages in the current channel
-            if (!msg.channel.permissionsOf(bot.user.id).has('sendMessages')) return;
-            //If Message is a tableFlip and the Guild has tableflip(tableunflip) on return an unflipped table
-            if (msg.content === "(╯°□°）╯︵ ┻━┻") database.checkSetting(msg.channel.guild.id, 'tableflip').then(() => bot.createMessage(msg.channel.id, unflippedTables[~~(Math.random() * (unflippedTables.length))])).catch(err => utils.fileLog(err));
-            //Check if message starts with a bot user mention and if so replace with the correct prefix and the 'chat' command text
-            if (msg.content.replace(/<@!/, "<@").startsWith(bot.user.mention)) msg.content = msg.content.replace(/<@!/g, "<@").replace(bot.user.mention, msgPrefix + "chat");
-            //Prefix command override so that prefix can be used with the default command prefix to prevent forgotten prefixes
-            if ((msg.content.startsWith(options.prefix + 'setprefix') || msg.content.startsWith(options.prefix + 'checkprefix')) && msgPrefix !== options.prefix) msg.content = msg.content.replace(options.prefix, msgPrefix)
+            if (!msg.channel.permissionsOf(bot.user.id).has('sendMessages'))
+                return;
+
+            // If Message is a tableFlip and the Guild has
+            // tableflip(tableunflip) on return an unflipped table
+            if (msg.content === "(╯°□°）╯︵ ┻━┻")
+                database.checkSetting(msg.channel.guild.id, 'tableflip').then(
+                    () => bot.createMessage(
+                        msg.channel.id,
+                        unflippedTables[~~(Math.random() * (unflippedTables.length))]
+                    )
+                ).catch(err => utils.fileLog(err));
+
+            // Check if message starts with a bot user mention and if so replace
+            // with the correct prefix and the 'chat' command text
+            if (msg.content.replace(/<@!/, "<@").startsWith(bot.user.mention))
+                msg.content = msg.content.replace(/<@!/g, "<@").replace(
+                    bot.user.mention, msgPrefix + "chat"
+                );
+
+            // Prefix command override so that prefix can be used with the
+            // default command prefix to prevent forgotten prefixes
+            if (
+                (
+                    msg.content.startsWith(options.prefix + 'setprefix') ||
+                    msg.content.startsWith(options.prefix + 'checkprefix')
+                ) &&
+                msgPrefix !== options.prefix
+            )
+                msg.content = msg.content.replace(options.prefix, msgPrefix);
         }
+
         //If the message stats with the set prefix
         if (msg.content.startsWith(msgPrefix)) {
             let formatedMsg = msg.content.substring(msgPrefix.length, msg.content.length), //Format message to remove command prefix
@@ -197,7 +303,7 @@ function postGuildCount() {
 
 //Set random bot status(includes random game as well as random streaming url)
 // Modified by Chryssi
-exports.setRandomStatus = (bot, urls) => {
+function setRandomStatus() {
     bot.shards.forEach(shard => {
         shard.editStatus({
             name: playing[~~(Math.random() * (playing.length))],

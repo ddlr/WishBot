@@ -76,6 +76,13 @@ function bacon(args, blehp, authorID) {
     // Set to false when somethingWentWrong() is called
     let makeRequest = true;
 
+    // Logs warnings in console.log (i.e. terminal)
+    function logError(message) {
+        console.log(
+          errorC('derpibooru:') + ' Error - ' + message
+        );
+    };
+
     // Error-handling function used in this command
     function somethingWentWrong(obj) {
         makeRequest = false;
@@ -289,13 +296,6 @@ function bacon(args, blehp, authorID) {
         tags =
           filters.default.tags ? filters.default.tags : '';
     }
-
-    // Logs warnings in console.log (i.e. terminal)
-    function logError(message) {
-        console.log(
-          errorC('derpibooru:') + ' Error - ' + message
-        );
-    };
 
     // HTTPS magic here
     //
@@ -575,8 +575,8 @@ module.exports = {
       'AND NOT comic\n' +
       '`` `default``: uses filter 133664 (sensible filter, hides unpleasant ' +
       'stuff)\n' +
-      'Or alternatively, use a Derpibooru filter in the format `filter, e.g. ' +
-      '`` `133664`` for https://derpibooru.org/filters/133664.'
+      'Or alternatively, use a Derpibooru filter in the format `` `filter``,' +
+      ' e.g. `` `133664`` for https://derpibooru.org/filters/133664.'
       ,
     aliases: ['dpc'],
     dm: true,
