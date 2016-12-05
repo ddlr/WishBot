@@ -33,6 +33,10 @@ module.exports = {
                 case 'blehp':
                     resolve({ message: 'no\nblehp *you*.' });
                     break;
+                case 'gimme fwaf':
+                case 'gimme mwap':
+                    resolve({ message: 'no u' });
+                    break;
                 default:
                     console.log(
                         `${warningC('respond:')} unknown argument ` +
