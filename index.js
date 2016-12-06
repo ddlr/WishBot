@@ -339,24 +339,75 @@ function reloadModules(msg) {
 setInterval(() => setRandomStatus(), 6e+5);
 
 //Changes the bots avatar every 2hrs
+//
+//setInterval(() => {
+    ////Reads avatar directory and randomly picks an avatar to switch to
+    //fs.readdir(`${__dirname}/avatars/`, (err, files) => {
+        //if (err) utils.fileLog(err)
+        //else {
+            //let avatar = files[~~(Math.random() * (files.length))];
+            ////Reads the avatar image file and changes the bots avatar to it
+            //fs.readFile(`${__dirname}/avatars/${avatar}`, (err, image) => {
+                //if (err) utils.fileLog(err)
+                //else {
+                    //bot.editSelf({
+                        //avatar: `data:image/jpg;base64,${image.toString('base64')}`
+                    //}).then(() => console.log(botC('Changed avatar to ' + avatar))).catch(err => utils.fileLog(err));
+                //}
+            //})
+        //}
+    //});
+//}, 7.2e+6);
+
+// Changes the bot’s avatar in Christmas season
+// Check the date every 3 hrs
+// If December OR before Jan 15, randomly pick from Christmas avatars
+// (avatars/xmas/ as opposed to avatars/regular/)
+// The following code block is heavily based on the commented code above.
 setInterval(() => {
-    //Reads avatar directory and randomly picks an avatar to switch to
-    fs.readdir(`${__dirname}/avatars/`, (err, files) => {
-        if (err) utils.fileLog(err)
-        else {
-            let avatar = files[~~(Math.random() * (files.length))];
+    try {
+        // Change avatar to one from arr (an array of avatar file paths).
+        function changeAvatar(arr, subdir) {
+            let avatar = arr[~~(Math.random() * (arr.length))];
+            // Assume that subdirectory is regular/ if undefined
+            subdir = subdir ? subdir + '/' : 'regular/';
             //Reads the avatar image file and changes the bots avatar to it
-            fs.readFile(`${__dirname}/avatars/${avatar}`, (err, image) => {
+            fs.readFile(`${__dirname}/avatars/${subdir}${avatar}`, (err, image) => {
                 if (err) utils.fileLog(err)
                 else {
                     bot.editSelf({
-                        avatar: `data:image/jpg;base64,${image.toString('base64')}`
-                    }).then(() => console.log(botC('Changed avatar to ' + avatar))).catch(err => utils.fileLog(err));
+                        avatar:
+                            `data:image/jpg;base64,${image.toString('base64')}`
+                    }).then(() => {
+                        console.log(botC('Changed avatar to ' + avatar));
+                    }).catch(err => {
+                        utils.fileLog(err);
+                    });
                 }
-            })
+            });
         }
-    });
-}, 7.2e+6);
+        let currentDate = new Date();
+        // Note that getMonth and getUTCMonth are zero-indexed
+        let currentMonth = currentDate.getUTCMonth();
+        // Note that getDate and getUTCDate are one-indexed
+        let currentDay = currentDate.getUTCDate();
+        if (
+            Number.isInteger(currentMonth) &&
+            currentMonth > -1 &&
+            (currentMonth === 11 || currentMonth === 0 && currentDay < 15)
+        ) {
+            fs.readdir(`${__dirname}/avatars/xmas`, (err, files) => {
+                changeAvatar(files, 'xmas');
+            });
+        } else {
+            fs.readdir(`${__dirname}/avatars/regular`, (err, files) => {
+                changeAvatar(files, 'regular');
+            });
+        }
+    } catch (err) {
+        utils.fileLog(err);
+    }
+}, 10.8e+6);
 
 //Bot Error Event
 bot.on("error", err => utils.fileLog(err)) //Logs error to file and console

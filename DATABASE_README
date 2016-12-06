@@ -1,0 +1,74 @@
+===============================================================================
+TO INSTALL MARIADB (for Ubuntu and Arch Linux)
+
+To install mariadb:
+~$ sudo apt install mariadb-server
+~$ sudo pacaur -Ss mariadb
+
+To set mariadb to automatically start at startup:
+(https://mariadb.com/kb/en/mariadb/starting-and-stopping-mariadb-automatically/)
+~$ sudo update-rc.d mysql defaults
+~$ sudo systemctl enable mysql.service (start at startup every time)
+OR sudo systemctl start mysql.service (start only this once)
+
+(or is it mariadb.service?)
+
+Not sure if this requires sudo:
+~$ mysql_install_db
+
+To secure the installation:
+~$ sudo mysql_secure_installation
+
+===============================================================================
+On Ubuntu, it’s not possible to perform `mysql -u root -p` without sudo. This
+is because (due to the mysql_native_password plugin) the user running the
+`mysql -u [user] -p` command must match the corresponding account in MariaDB.
+(see http://stackoverflow.com/a/35748657)
+
+Here is how to disable it (courtesy of http://askubuntu.com/a/784347). Note
+that this will make your installation less secure as any user will be able to
+access the database (though this will not be a problem if (a) there’s only one
+user, and (b) the database is only accessible through localhost).
+
+Check what accounts are present:
+> SELECT User,Host FROM mysql.user;
+
+Delete root account
+> DROP USER 'root'@'localhost';
+
+Recreate root account
+> CREATE USER 'root'@'localhost' IDENTIFIED BY '';
+
+Grant permissions and flush privileges (the second step is very important)
+Note that you can replace `localhost` with % (i.e. connect from anywhere)
+> GRANT ALL PRIVILEGES ON *.* TO 'root'@'localhost';
+> FLUSH PRIVILEGES;
+
+>>> DON’T FORGET TO SET A PASSWORD AFTERWARDS!!! <<<
+(I just did mysql_secure_installation again because I’m dumb and lazy)
+
+===============================================================================
+
+TO ACCESS DATABASE:
+
+~$ mysql -u root -p
+   [type in password here when the prompt appears]
+
+===============================================================================
+
+TO SET UP DATABASE:
+
+> CREATE DATABASE blehp;
+> USE blehp;
+> CREATE TABLE blehp.server_settings (guild_id CHAR(64) charset utf8,
+      settings national varchar(256), disabled_commands national varchar(256));
+> CREATE TABLE blehp.channel_ignores (channel_id CHAR(64) charset utf8);
+
+TO LIST TABLES:
+> SHOW TABLES;
+
+TO LIST ENTRIES OF TABLE:
+> SELECT * FROM blehp;
+> SELECT name_of_column FROM blehp;
+
+MySQL default port is 3306.

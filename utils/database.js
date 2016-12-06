@@ -1,7 +1,3 @@
-// MySQL commands I used to set this up are below — Chryssi
-// create table blehp.server_settings (guild_id CHAR(64) charset utf8, settings national varchar(256), disabled_commands national varchar(256));
-// create table blehp.channel_ignores (channel_id CHAR(64) charset utf8);
-
 const mysql = require('mysql'),
     fs = require('fs'),
     options = require('./../options/options.json'),
