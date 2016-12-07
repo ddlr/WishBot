@@ -31,7 +31,7 @@ module.exports = {
                             inline: true
                         }, {
                             name: 'Join Date',
-                            value: `${moment(user.joinedAt).utc().format('ddd MMM DD YYYY | kk:mm:ss')} (${moment(user.joinedAt).fromNow()}) `,
+                            value: `${moment(user.joinedAt).utc().format('ddd MMM DD YYYY | HH:mm:ss')} (${moment(user.joinedAt).fromNow()}) `,
                             inline: true
                         }, {
                             name: 'User ID',
@@ -43,7 +43,7 @@ module.exports = {
                             inline: true
                         }, {
                             name: 'Creation Date',
-                            value: `${moment(user.user.createdAt).utc().format('ddd MMM DD YYYY | kk:mm:ss')} (${moment(user.user.createdAt).fromNow()})`,
+                            value: `${moment(user.user.createdAt).utc().format('ddd MMM DD YYYY | HH:mm:ss')} (${moment(user.user.createdAt).fromNow()})`,
                             inline: true
                         }]
                     }
