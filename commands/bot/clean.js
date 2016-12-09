@@ -3,7 +3,7 @@ module.exports = {
 
 \`clean [number]\``,
     delete: true,
-    cooldown: 25,
+    cooldown: 30,
     process: (msg, args, bot) => {
         return new Promise(resolve => {
             console.log(

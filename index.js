@@ -89,8 +89,7 @@ bot.on("messageCreate", msg => {
     // else if (msg.author.id !== '185298624555646976') return; //Used only if I want to disable the bot for everyone but me while testing/debugging
     else {
         //If used in guild and the guild has a custom prefix set the msgPrefix as such otherwise grab the default prefix
-        let msgPrefix = msg.channel.guild && database.getPrefix(msg.channel.guild.id) !== undefined ? database.getPrefix(msg.channel.guild.id) : options.prefix;
-
+        var msgPrefix = msg.channel.guild && database.getPrefix(msg.channel.guild.id) !== undefined ? database.getPrefix(msg.channel.guild.id) : options.prefix;
         //Use Eval on the message if it starts with sudo and used by Mei
         // Changes by Chryssi: change user ID to Chryssi
         if (msg.content.split(" ")[0] === "sudo" && msg.author.id === "185298624555646976") {
@@ -98,8 +97,13 @@ bot.on("messageCreate", msg => {
             return;
         }
 
-        //Hot reload all possible files
-        if (msg.content.startsWith(options.prefix + 'reload')) reloadModules(msg);
+        //Hot reload all possible files (if user is Chryssi)
+        if (
+            msg.content.startsWith(options.prefix + 'reload') &&
+            msg.author.id === "185298624555646976"
+        ) {
+            reloadModules(msg);
+        }
 
         // If Changeling Bot is mentioned and prefix-less command is an alias as
         // stated in mentionCommands.
@@ -194,7 +198,7 @@ bot.on("messageCreate", msg => {
 
         //If the message stats with the set prefix
         if (msg.content.startsWith(msgPrefix)) {
-            let formatedMsg = msg.content.substring(msgPrefix.length, msg.content.length), //Format message to remove command prefix
+            var formatedMsg = msg.content.substring(msgPrefix.length, msg.content.length), //Format message to remove command prefix
                 cmdTxt = formatedMsg.split(" ")[0].toLowerCase(), //Get command from the formatted message
                 args = formatedMsg.split(' ').slice(1).join(' '); //Get arguments from the formatted message
             if (commandAliases.hasOwnProperty(cmdTxt)) cmdTxt = commandAliases[cmdTxt]; //If the cmdTxt is an alias of the command
@@ -206,7 +210,7 @@ bot.on("messageCreate", msg => {
 });
 
 function evalInput(msg, args) {
-    let result;
+    var result;
     //Trys to run eval on the text and output either an error or the result if applicable 
     try {
         result = eval("try{" + args + "}catch(err){console.log(err);msg.channel.createMessage(\"```\"+err+\"```\");}");
@@ -244,7 +248,10 @@ bot.on("guildMemberRemove", (guild, member) => {
 //Replaces the correct strings with the correct variables then sends the message to the channel
 function sendGuildMessage(response, guild, member) {
     if (response.channel === '' || (response.channel !== '' && !bot.guilds.get(guild.id).channels.get(response.channel).permissionsOf(bot.user.id).has('sendMessages'))) return;
-    bot.createMessage(response.channel, response.response.replace(/\[GuildName]/g, guild.name).replace(/\[ChannelName]/g, guild.channels.get(response.channel).name).replace(/\[ChannelMention]/g, guild.channels.get(response.channel).mention).replace(/\[UserName]/g, member.user.username).replace(/\[UserMention]/g, member.user.mention)).catch(err => console.log(errorC('err')));
+    else {
+        usageChecker.updateTimestamp(guild);
+        bot.createMessage(response.channel, response.response.replace(/\[GuildName]/g, guild.name).replace(/\[ChannelName]/g, guild.channels.get(response.channel).name).replace(/\[ChannelMention]/g, guild.channels.get(response.channel).mention).replace(/\[UserName]/g, member.user.username).replace(/\[UserMention]/g, member.user.mention)).catch(err => console.log(errorC('err')));
+    }
 }
 
 //Guild Joined Event
@@ -368,7 +375,7 @@ setInterval(() => {
     try {
         // Change avatar to one from arr (an array of avatar file paths).
         function changeAvatar(arr, subdir) {
-            let avatar = arr[~~(Math.random() * (arr.length))];
+            var avatar = arr[~~(Math.random() * (arr.length))];
             // Assume that subdirectory is regular/ if undefined
             subdir = subdir ? subdir + '/' : 'regular/';
             //Reads the avatar image file and changes the bots avatar to it
