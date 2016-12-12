@@ -50,11 +50,10 @@ ${this.aliases !== null ? '**Aliases:** ' + this.aliases.map(a => "\`"+a+"\`").j
                     //   edit_async: new Promise(...)
                     // -- Chryssi
                     else if (response.edit_async) {
-                        console.log('response.edit_async: ' + response.edit_async);
                         let a = response.edit_async;
                         a.then((resolve_message) => {
-                            console.log('Resolving edit_async promise.'); message.edit(resolve_message)
-                        });
+                            message.edit(resolve_message)
+                        }).catch(err => utils.fileLog(err));
                     }
 
                     if (response.delete) utils.messageDelete(message); //Check for delete sent message
