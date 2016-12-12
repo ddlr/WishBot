@@ -10,5 +10,6 @@
         "password": "",
         "database": ""
     },
-    "show_args_in_console": false
+    "show_args_in_console": false,
+    "verbose_logging": false
 }
