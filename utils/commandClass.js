@@ -2,19 +2,37 @@ const utils = require('./utils.js');
 
 module.exports = class Command {
     constructor(name, type, settings) {
-        this.name = name; //Command Name
-        this.type = type; //Comand Type
-        this.usage = settings.usage || 'No Usage Currently Set.'; //Command Usage for in the help message
-        this.currentCooldown = {}; //currentlyOnCooldown time for use in coolDown Check
-        this.execTimes = 0; //# of Execution times since startup
-        this.run = settings.process; //The Function of the command
-        this.delete = settings.delete || false; //Setting to delete command on use(true by default)
-        this.dm = !(settings.dm === false); //Setting for command to work in DM's(Private messages)(true by default)
-        this.cooldown = settings.cooldown || 5; //The cooldown for the command
-        this.togglable = !(settings.togglable === false); //Wheather the command is toggable or not with the toggle command(true by default)
-        this.aliases = settings.aliases || null //Array of aliases the commmand has(none by default)
-        this.privateGuild = settings.privateGuild || null; //Array of guilds the command is resticted to(no restriction by default)
-        this.permissions = settings.permissions || null; //Used to define permissions the command requires(none by default)
+        //Command Name
+        this.name = name;
+        //Comand Type
+        this.type = type;
+        //Command Usage for in the help message
+        this.usage = settings.usage || 'No Usage Currently Set.';
+        //currentlyOnCooldown time for use in coolDown Check
+        this.currentCooldown = {};
+        //# of Execution times since startup
+        this.execTimes = 0;
+        //The Function of the command
+        this.run = settings.process;
+        //Setting to delete command on use(true by default)
+        this.delete = settings.delete || false;
+        //Setting for command to work in DM's(Private messages)(true by default)
+        this.dm = !(settings.dm === false);
+        //The cooldown for the command
+        this.cooldown = settings.cooldown || 5;
+        // Whether the command is toggable or not with the toggle command (true
+        // by default)
+        this.togglable = !(settings.togglable === false);
+        // Array of aliases the commmand has(none by default)
+        this.aliases = settings.aliases || null
+        // Array of guilds the command is resticted to (no restriction by
+        // default)
+        this.privateGuild = settings.privateGuild || null;
+        // Used to define permissions the command requires (none by default)
+        this.permissions = settings.permissions || null;
+        // Whether this command needs to have guild prefix OR mention the bot in
+        // order to run.
+        this.needsPrefix = settings.needsPrefix || true;
     }
     //The template help message which is used in `help [cmdName]`
     get help() {

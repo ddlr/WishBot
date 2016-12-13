@@ -76,14 +76,15 @@ var mentionCommands = {
 
 // List of commands that are run if the message matches an entry.
 var nonPrefixedCommands = {
-    'gimme fluff': 'dpc cute,-oc',
-    'gimme cute': 'dpc cute,-oc',
+    'gimme fluff': 'dpc cute,-oc,-screencap',
+    'gimme cute': 'dpc cute,-oc,-screencap',
     'gimme fwaf': 'respond gimme fwaf',
     'gimme mwap': 'respond gimme mwap'
-}
+};
 
 //On Message Creation Event
 bot.on("messageCreate", msg => {
+
     //If bot isn't ready or if the message author is a bot who isn't Kimi do nothing with the message
     if (!bot.ready || (msg.author.bot && msg.author.id !== "174669219659513856")) return;
     // else if (msg.author.id !== '185298624555646976') return; //Used only if I want to disable the bot for everyone but me while testing/debugging
@@ -179,9 +180,9 @@ bot.on("messageCreate", msg => {
 
             // Check if message starts with a bot user mention and if so replace
             // with the correct prefix and the 'chat' command text
-            if (msg.content.replace(/<@!/, "<@").startsWith(bot.user.mention))
-                msg.content = msg.content.replace(/<@!/g, "<@").replace(
-                    bot.user.mention, msgPrefix + "chat"
+            if (msg.content.replace(/<@!/, '<@').startsWith(bot.user.mention))
+                msg.content = msg.content.replace(/<@!/g, '<@').replace(
+                    bot.user.mention, msgPrefix + 'chat'
                 );
 
             // Prefix command override so that prefix can be used with the
@@ -199,7 +200,7 @@ bot.on("messageCreate", msg => {
         //If the message stats with the set prefix
         if (msg.content.startsWith(msgPrefix)) {
             var formatedMsg = msg.content.substring(msgPrefix.length, msg.content.length), //Format message to remove command prefix
-                cmdTxt = formatedMsg.split(" ")[0].toLowerCase(), //Get command from the formatted message
+                cmdTxt = formatedMsg.split(' ')[0].toLowerCase(), //Get command from the formatted message
                 args = formatedMsg.split(' ').slice(1).join(' '); //Get arguments from the formatted message
             if (commandAliases.hasOwnProperty(cmdTxt)) cmdTxt = commandAliases[cmdTxt]; //If the cmdTxt is an alias of the command
             if (cmdTxt === 'channelmute') processCmd(msg, args, commands[cmdTxt], bot); //Override channelCheck if cmd is channelmute to unmute a muted channel
@@ -219,7 +220,8 @@ function evalInput(msg, args) {
         msg.channel.createMessage("```" + e + "```");
     }
     //If result isn't undefined and it isn't an object return to channel
-    if (result && typeof result !== 'object') msg.channel.createMessage(result);
+    if (result && typeof result !== 'object')
+        msg.channel.createMessage(result);
     console.log(result)
 }
 
@@ -335,7 +337,7 @@ function reloadModules(msg) {
         playing = reload('./lists/playing.json');
         commandLoader.load().then(() => {
             console.log(botC('@' + bot.user.username + ': ') + errorC('Successfully Reloaded All Modules'));
-            msg.channel.createMessage('Successfully Reloaded All Modules').then(message => utils.messageDelete(message))
+            msg.channel.createMessage('Successfully reloaded all modules').then(message => utils.messageDelete(message))
         });
     } catch (e) {
         console.log(errorC('Error Reloading Modules: ' + e))
@@ -344,27 +346,6 @@ function reloadModules(msg) {
 
 //Changes the bots status every 10mins
 setInterval(() => setRandomStatus(), 6e+5);
-
-//Changes the bots avatar every 2hrs
-//
-//setInterval(() => {
-    ////Reads avatar directory and randomly picks an avatar to switch to
-    //fs.readdir(`${__dirname}/avatars/`, (err, files) => {
-        //if (err) utils.fileLog(err)
-        //else {
-            //let avatar = files[~~(Math.random() * (files.length))];
-            ////Reads the avatar image file and changes the bots avatar to it
-            //fs.readFile(`${__dirname}/avatars/${avatar}`, (err, image) => {
-                //if (err) utils.fileLog(err)
-                //else {
-                    //bot.editSelf({
-                        //avatar: `data:image/jpg;base64,${image.toString('base64')}`
-                    //}).then(() => console.log(botC('Changed avatar to ' + avatar))).catch(err => utils.fileLog(err));
-                //}
-            //})
-        //}
-    //});
-//}, 7.2e+6);
 
 // Changes the bot’s avatar in Christmas season
 // Check the date every 3 hrs
@@ -387,9 +368,7 @@ setInterval(() => {
                             `data:image/jpg;base64,${image.toString('base64')}`
                     }).then(() => {
                         console.log(botC('Changed avatar to ' + avatar));
-                    }).catch(err => {
-                        utils.fileLog(err);
-                    });
+                    }).catch(err => utils.fileLog(err));
                 }
             });
         }

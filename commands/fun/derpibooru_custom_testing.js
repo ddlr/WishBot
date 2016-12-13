@@ -82,7 +82,7 @@ function log(arr) {
 // not pony related, obese, obligatory pony, oc:anon, oc:aryanne,
 // oc:kyrie, op is a duck, pony creator, pregnant, questionable,
 // seizure warning, semi-grimdark, sneezing fetish, suggestive,
-// text only, youtube caption
+// text only, youtube caption, youtube, rule 34
 //
 // `rdd`, `fourhts`, and `fourths` is for fourhts. You’re welcome.
 //

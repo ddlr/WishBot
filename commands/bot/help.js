@@ -37,7 +37,7 @@ module.exports = {
                 }
                 //Return help message
                 resolve({
-                    message: helpMsg + '\n\nFor additional info on a specific command use `help [command]`.\n**<https://github.com/hsiW/WishBot/wiki>** can be used for additional documentation.'
+                    message: helpMsg + '\n\nFor additional info on a specific command use `help [command]`.'
                 });
             }
         });
