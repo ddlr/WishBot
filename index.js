@@ -76,8 +76,8 @@ var mentionCommands = {
 
 // List of commands that are run if the message matches an entry.
 var nonPrefixedCommands = {
-    'gimme fluff': 'dpc cute',
-    'gimme cute': 'dpc cute',
+    'gimme fluff': 'dpc cute,-oc',
+    'gimme cute': 'dpc cute,-oc',
     'gimme fwaf': 'respond gimme fwaf',
     'gimme mwap': 'respond gimme mwap'
 }
