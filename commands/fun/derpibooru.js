@@ -576,9 +576,10 @@ module.exports = {
       '`` `default``: uses filter 133664 (sensible filter, hides unpleasant ' +
       'stuff)\n' +
       'Or alternatively, use a Derpibooru filter in the format `` `filter``,' +
-      ' e.g. `` `133664`` for https://derpibooru.org/filters/133664.'
+      ' e.g. `` `133664`` for https://derpibooru.org/filters/133664. (NOTE: ' +
+      'this will not work yet)'
       ,
-    aliases: ['dpc'],
+    aliases: ['dp', 'derpibooru_custom', 'dpc'],
     dm: true,
     delete: false,
     cooldown: 5,
