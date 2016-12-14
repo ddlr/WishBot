@@ -554,8 +554,8 @@ module.exports = {
     usage:
       'Returns a **randomly-selected image from Derpibooru**. This version ' +
       'of the command allows for custom Derpibooru filters and filtering by ' +
-      'search queries. Inspired by fourhts’ Cute Horses and based on this ' +
-      'bot’s ``derpibooru`` command. (http://wikipedia.sexy/hoers)\n' +
+      'search queries. Inspired by fourths’ Cute Horses ' +
+      '(http://wikipedia.sexy/hoers).\n' +
       '\n' +
       '**Usage:**\n' +
       '```' +
