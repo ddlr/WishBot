@@ -582,7 +582,7 @@ module.exports = {
     aliases: ['dp', 'derpibooru_custom', 'dpc'],
     dm: true,
     delete: false,
-    cooldown: 5,
+    cooldown: 10,
     process: (msg, args) => {
         // Based off fourhts’ cute shipping thing at
         // http://wikipedia.sexy/hoers/
