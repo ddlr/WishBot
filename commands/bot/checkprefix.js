@@ -3,9 +3,10 @@ var Database = require('./../../utils/database.js'),
 
 module.exports = {
     usage: 'Returns the **Current Prefix** for the Guild. **Overrides** current command prefix and will **always** work with the default prefix.',
-    toggable: false,
+    togglable: false,
     dm: false,
-    process: (msg, args) => {
+    process: obj => {
+        var msg = obj.msg;
         return new Promise(resolve => {
             //Returns the current prefix for the guild by checking if its in the prefix database and returning the entry if so, otherwise returning the default prefix.
             resolve({

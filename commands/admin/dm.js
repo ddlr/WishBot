@@ -1,6 +1,9 @@
 module.exports = {
     usage: 'DM a user using the bot. `dm [userID] [message]` to send a direct message to userID with message.',
-    process: (msg, args, bot) => {
+    process: obj => {
+        var msg = obj.msg,
+            args = obj.args,
+            bot = obj.bot;
         return new Promise(resolve => {
             //Try to get the user from the first part of the args
             let user = bot.users.get(args.split(' ')[0]),

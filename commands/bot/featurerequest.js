@@ -3,7 +3,10 @@ module.exports = {
     aliases: ['suggest'],
     dm: false,
     cooldown: 60,
-    process: (msg, args, bot) => {
+    process: obj => {
+        var msg = obj.msg,
+            args = obj.args,
+            bot = obj.bot;
         return new Promise(resolve => {
             //If nothing is requested yell at the user for not doing so
             if (!args) resolve({
@@ -16,9 +19,12 @@ module.exports = {
                 delete: true
             })
             else {
-                //Create a embed message in the #feature_requests channel in the Yuki-chan server with the users request
-                // Note that Chryssi has changed this to a channel in his own server
-                // This is a channel for bot testing please don’t send actual requests here I’ll never check them
+                // Create a embed message to a channel at the user’s request
+                // Note that Chryssi has changed this to a channel in his own
+                // server
+                //
+                // Please don’t send actual requests here this channel isn’t
+                // for actual feature requests and I’ll never check them
                 bot.createMessage('249654337477935104', {
                     embed: {
                         author: {

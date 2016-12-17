@@ -1,6 +1,9 @@
 module.exports = {
     usage: 'Search and display guilds. `guilds [args]` to search the bots guilds for `args` otherwise `guilds` will display the top 10 largest guilds the bot is in.',
-    process: (msg, args, bot) => {
+    process: obj => {
+        var msg = obj.msg,
+            args = obj.args,
+            bot = obj.bot;
         return new Promise(resolve => {
             //If no args return the bots top 10 guilds
             if (!args) resolve({

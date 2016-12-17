@@ -654,8 +654,10 @@ module.exports = {
     aliases: ['dpt'],
     dm: true,
     delete: false,
-    cooldown: 5,
-    process: (msg, args) => {
+    cooldown: 10,
+    process: obj => {
+        var msg = obj.msg,
+            args = obj.args;
         // Based off fourhts’ cute shipping thing at
         // http://wikipedia.sexy/hoers/
         // and also ES6 promises
@@ -663,7 +665,7 @@ module.exports = {
 
         return Promise.resolve({
             message: "Retrieving Derpibooru image…",
-            edit_async: new Promise(resolve => {
+            edit: new Promise(resolve => {
                 let output;
                 let a = new Promise(resolve => {
                     bacon(

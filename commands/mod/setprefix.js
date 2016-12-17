@@ -8,7 +8,9 @@ module.exports = {
         'manageGuild': true
     },
     cooldown: 25,
-    process: (msg, args) => {
+    process: obj => {
+        var msg = obj.msg,
+            args = obj.args;
         return new Promise(resolve => {
             //Changes guild prefix to the entered args
             Database.changePrefix(msg.channel.guild.id, args).then(prefix => {

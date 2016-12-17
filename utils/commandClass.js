@@ -1,5 +1,3 @@
-const utils = require('./utils.js');
-
 module.exports = class Command {
     constructor(name, type, settings) {
         //Command Name
@@ -24,7 +22,7 @@ module.exports = class Command {
         // by default)
         this.togglable = !(settings.togglable === false);
         // Array of aliases the commmand has(none by default)
-        this.aliases = settings.aliases || null
+        this.aliases = settings.aliases || null;
         // Array of guilds the command is resticted to (no restriction by
         // default)
         this.privateGuild = settings.privateGuild || null;
@@ -32,7 +30,7 @@ module.exports = class Command {
         this.permissions = settings.permissions || null;
         // Whether this command needs to have guild prefix OR mention the bot in
         // order to run.
-        this.needsPrefix = settings.needsPrefix || true;
+        this.needsPrefix = ! ( settings.needsPrefix === false );
     }
     //The template help message which is used in `help [cmdName]`
     get help() {
@@ -41,43 +39,38 @@ __**Command Info for:**__ \`${this.name}\`
 
 ${this.usage}
 
-${this.aliases !== null ? '**Aliases:** ' + this.aliases.map(a => "\`"+a+"\`").join(', ') +'\n' : ''}${this.permissions !== null ? '**Permissions:** ' + Object.keys(this.permissions).map(p => "\`"+p+"\`").join(', ') +'\n' : ''}**Cooldown:** \`${this.cooldown}s\` | **Delete on Use:** \`${this.delete}\` | **DM:** \`${this.dm}\` | **Uses:** \`${this.execTimes}\``;
+${this.aliases !== null ? '**Aliases:** ' + this.aliases.map(a => "\`"+a+"\`").join(', ') +'\n' : ''}${this.permissions !== null ? '**Permissions:** ' + Object.keys(this.permissions).map(p => "\`"+p+"\`").join(', ') +'\n' : ''}**Cooldown:** \`${this.cooldown}s\` | **Delete on Use:** \`${this.delete}\` | **DM:** \`${this.dm}\` | **Uses:** \`${this.execTimes}\` | **Requires prefix or bot mention:** \`${this.needsPrefix === false ? 'no' : 'yes'}\``;
     }
 
     //Command Processing
-    exec(msg, args, bot) {
-        return new Promise(resolve => { //Commands can take and manipulate the msg object, the command arguments and the bot object
-            //Checks if the command deletes on use as well as if the bot has delete permissions before running the msg deletion
-            if (this.delete && msg.channel.guild && msg.channel.permissionsOf(bot.user.id).has('manageMessages')) msg.delete().catch(err => console.log(errorC(err)));
-            this.execTimes++; //Adds 1 the current number of execution times(Uses)
-            //Run the command
-            this.run(msg, args, bot).then(response => {
-                if (response.embed !== undefined && msg.channel.guild && !(msg.channel.permissionsOf(bot.user.id).has('embedLinks'))) return; //If command needs embed permissions and bot doesn't have it
-                //Main Processing of Command(uses Promises)
-                //Commands return a Promise which can contain a 'message, 'upload', 'embed' or 'disableEveryone' to send message being the message content, upload being whatever file you'd like to, embed being a discord embed object or allow the message to mention everyone with @everyone
-                //Commands also can return a edit function which allows you to edit messages while also taking the inital sent message object
-                //They can also return a delete after 5s boolean which deletes the sent message after 5s
-                msg.channel.createMessage({
-                    content: response.message ? response.message : '', //Message content
-                    embed: response.embed ? response.embed : undefined, //Message embed
-                    disableEveryone: response.disableEveryone != null ? response.disableEveryone : undefined //Allow/deny use of @everyone or @here in sendmessages
-                }, response.upload).then(message => {
-                    if (response.edit) message.edit(response.edit(message)) //Edit sent message 
-                    // Similar to response.edit but with support for returning
-                    // promises, e.g. in commands/fun/derpibooru_custom.js:
-                    //   edit_async: new Promise(...)
-                    // -- Chryssi
-                    else if (response.edit_async) {
-                        let a = response.edit_async;
-                        a.then((resolve_message) => {
-                            message.edit(resolve_message)
-                        }).catch(err => utils.fileLog(err));
-                    }
-
-                    if (response.delete) utils.messageDelete(message); //Check for delete sent message
-                }).catch(err => utils.fileLog(err)); //Log to console and file if errored
-            })
-        })
+    // obj = {
+    //     msg: msg, args: args, bot: bot, i: i, content: obj.content
+    // }
+    exec(obj) {
+        var msg = obj.msg,
+            args = obj.args,
+            bot = obj.bot,
+            i = obj.i;
+        // Commands can take and manipulate the msg object, the command
+        // arguments and the bot object
+        return new Promise(resolve => {
+            // Checks if the command deletes on use as well as if the bot has delete permissions before running the msg deletion
+            if (
+                this.delete && msg.channel.guild &&
+                msg.channel.permissionsOf(bot.user.id).has('manageMessages')
+            )
+                msg.delete().catch(err => console.log(errorC(err)));
+            // Adds 1 to the current number of execution times (uses)
+            this.execTimes++;
+            // Run the command
+            // Note the i + 1, which is very important in counting the number
+            // of layers deep this command is (to prevent recursion).
+            this.run({
+                msg: msg, args: args, bot: bot, i: i + 1, content: obj.content
+            }).then(
+                response => { resolve(response); }
+            ).catch(err => console.log(errorC(err)));
+        });
     }
 
     //Cooldown Check(returns true if the command shouldn't be processed)
@@ -90,7 +83,7 @@ ${this.aliases !== null ? '**Aliases:** ' + this.aliases.map(a => "\`"+a+"\`").j
             this.currentCooldown[user] = Date.now();
             setTimeout(() => {
                 delete this.currentCooldown[user];
-            }, this.cooldown * 1000)
+            }, this.cooldown * 1000);
             return false;
         }
     }
@@ -127,4 +120,4 @@ ${this.aliases !== null ? '**Aliases:** ' + this.aliases.map(a => "\`"+a+"\`").j
         }
         return hasPermssion;
     }
-}
+};

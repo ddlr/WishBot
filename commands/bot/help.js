@@ -3,7 +3,11 @@ var utils = require('./../../utils/utils.js'),
 
 module.exports = {
     aliases: ['commands'],
-    process: (msg, args, bot) => {
+    needsPrefix: false,
+    process: obj => {
+        var msg = obj.msg,
+            args = obj.args,
+            bot = obj.bot;
         return new Promise(resolve => {
             //Check is args are an alias and if so replace args with correct command text
             commandAliases.hasOwnProperty(args)

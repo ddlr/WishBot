@@ -7,7 +7,8 @@ module.exports = {
       'You shouldn’t see this message.',
     delete: false,
     cooldown: 1,
-    process: (msg, args) => {
+    process: obj => {
+        var args = obj.args;
         return new Promise(resolve => {
             switch (args) {
                 case 'heart':

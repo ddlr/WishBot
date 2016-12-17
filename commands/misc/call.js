@@ -3,7 +3,8 @@ module.exports = {
     delete: true,
     dm: false,
     cooldown: 30,
-    process: msg => {
+    process: obj => {
+        var msg = obj.msg;
         return new Promise(resolve => {
             //Check if the command user can mention everyone and if so send an @everyone
             if (msg.channel.permissionsOf(msg.author.id).has('mentionEveryone')) resolve({

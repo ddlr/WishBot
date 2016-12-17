@@ -8,7 +8,9 @@ module.exports = {
     permissions: {
         'manageGuild': true
     },
-    process: (msg, args) => {
+    process: obj => {
+        var msg = obj.msg,
+            args = obj.args;
         return new Promise(resolve => {
             let command = args.toLowerCase(); //Convert args to lowercase for easier use
             if (commandAliases.hasOwnProperty(command)) command = commandAliases[command]; //Checks if commands is an aliases of another command

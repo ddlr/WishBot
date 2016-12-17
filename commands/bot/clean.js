@@ -4,7 +4,10 @@ module.exports = {
 \`clean [number]\``,
     delete: true,
     cooldown: 30,
-    process: (msg, args, bot) => {
+    process: obj => {
+        var msg = obj.msg,
+            args = obj.args,
+            bot = obj.bot;
         return new Promise(resolve => {
             console.log(
               miscC('clean:') +

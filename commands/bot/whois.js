@@ -6,7 +6,9 @@ module.exports = {
     usage: "Returns **info on the user**, can take a **nickname/username/mention** to return the info of that user. **Requires** embedded links in order for this command to display.\n\n`whois [none] or [user]`",
     aliases: ['about'],
     dm: false,
-    process: (msg, args) => {
+    process: obj => {
+        var msg = obj.msg,
+            args = obj.args;
         return new Promise(resolve => {
             //Get user using either the mention or using the getName function
             let = user = msg.mentions.length === 1 ? msg.channel.guild.members.get(msg.mentions[0].id) : getName(msg, args);

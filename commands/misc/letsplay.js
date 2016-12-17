@@ -3,7 +3,9 @@ module.exports = {
     dm: false,
     delete: true,
     cooldown: 30,
-    process: (msg, args) => {
+    process: obj => {
+        var msg = obj.msg,
+            args = obj.args;
         return new Promise(resolve => {
             //If args sent use those as the game otherwise just have it be 'a game'
             args = args ? args : "a game";

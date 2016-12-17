@@ -10,8 +10,9 @@ var options = reload('./options/options.json'),
     commandLoader = reload('./utils/commandLoader.js'),
     utils = reload('./utils/utils.js'),
     database = reload('./utils/database.js'),
-    processCmd = reload('./utils/commandHandler.js'),
+    runCmd = reload('./utils/commandRun.js'),
     usageChecker = reload('./utils/usageChecker.js'),
+    admins = reload('./options/admins.json'),
     playing = reload('./lists/playing.json'), //List of playing status's for the bot to use
     //Unflipped tables for use with the auto-table-unfipper
     unflippedTables = ["┬─┬﻿ ︵ /(.□. \\\\)", "┬─┬ノ( º _ ºノ)", "┬─┬﻿ ノ( ゜-゜ノ)", "┬─┬ ノ( ^_^ノ)", "┬──┬﻿ ¯\\\\_(ツ)", "(╯°□°）╯︵ /(.□. \\\\)"],
@@ -63,6 +64,9 @@ bot.on("ready", () => {
 // List of command aliases run without guild prefixes when Changeling Bot is
 // mentioned. Also run without needing Changeling Bot to be mentioned in direct
 // messages (PMs or private messages).
+//
+// TODO: These have been removed, so reimplement these
+/*
 var mentionCommands = {
     '❤': 'respond heart',
     '💙': 'respond blue heart',
@@ -73,141 +77,224 @@ var mentionCommands = {
     'thank you,': 'respond thank you',
     'blehp': 'respond blehp'
 };
-
-// List of commands that are run if the message matches an entry.
-var nonPrefixedCommands = {
-    'gimme fluff': 'dpc cute,-oc,-screencap',
-    'gimme cute': 'dpc cute,-oc,-screencap',
-    'gimme fwaf': 'respond gimme fwaf',
-    'gimme mwap': 'respond gimme mwap'
-};
+*/
 
 //On Message Creation Event
 bot.on("messageCreate", msg => {
 
-    //If bot isn't ready or if the message author is a bot who isn't Kimi do nothing with the message
-    if (!bot.ready || (msg.author.bot && msg.author.id !== "174669219659513856")) return;
-    // else if (msg.author.id !== '185298624555646976') return; //Used only if I want to disable the bot for everyone but me while testing/debugging
+    // If message author is a bot, don’t do anything
+    if (msg.author.bot) return;
+    // Disable bot for everyone but bot admins for testing purposes
+    // else if (! admins.includes(msg.author.id)) return;
+    // If bot isn’t ready, tell the user so
+    else if (! bot.ready) // TODO: Test if utils actually loads by this point
+        msg.channel.createMessage(
+            'Error: Changling Bot not ready yet. Please wait a bit first. ' +
+            'Beep boop.'
+        ).then(
+            message => utils.messageDelete(message)
+        ).catch(err => utils.fileLog(err));
+    // Use eval on the message if it starts with sudo and by an admin
+    else if (
+        msg.content.split(' ')[0] === 'sudo' &&
+        admins.includes(msg.author.id)
+    ) {
+        evalInput(msg, msg.content.split(" ").slice(1).join(' '));
+        return;
+    }
+    // Hot reload all possible files if by an admin
+    else if (
+        (
+            msg.content.startsWith(options.prefix + 'reload') ||
+            msg.content.startsWith(bot.user.mention + ' reload')
+        ) &&
+        admins.includes(msg.author.id)
+    ) {
+        reloadModules(msg);
+    }
     else {
-        //If used in guild and the guild has a custom prefix set the msgPrefix as such otherwise grab the default prefix
-        var msgPrefix = msg.channel.guild && database.getPrefix(msg.channel.guild.id) !== undefined ? database.getPrefix(msg.channel.guild.id) : options.prefix;
-        //Use Eval on the message if it starts with sudo and used by Mei
-        // Changes by Chryssi: change user ID to Chryssi
-        if (msg.content.split(" ")[0] === "sudo" && msg.author.id === "185298624555646976") {
-            evalInput(msg, msg.content.split(" ").slice(1).join(' '));
+        // If used in guild and the guild has a custom prefix set the msgPrefix
+        // as such otherwise grab the default prefix
+        let msgPrefix =
+            msg.channel.guild &&
+            database.getPrefix(msg.channel.guild.id) !== undefined
+                ? database.getPrefix(msg.channel.guild.id)
+                : options.prefix;
+
+        // Make msg.content a separate variable so that even when message
+        // content is changed to turn into a runnable command, the original
+        // message content is still accessible.
+        let content = msg.content;
+
+        // There are two types of commands in Changeling Bot.
+        //
+        // FIRST TYPE:
+        //
+        // Commands that require mentioning the bot at the beginning of the
+        // message OR a prefix
+        // e.g. @Changeling Bot dpc raridash
+        //      ~dpc raridash
+        //
+        // When the bot is mentioned twice, the first instance is treated as the
+        // bot mention while the second instance is treated as part of command
+        // arguments
+        //      @Changeling Bot whois @Changeling Bot
+        // is equivalent to
+        //      ~whois @Changeling Bot (assuming that guild prefix is ~)
+        //
+        // And so, according to the above rules:
+        //      whois @Changeling Bot
+        //
+        // will not work because (a) Changeling Bot is not mentioned at the
+        // start, and (b) there is no prefix at the beginning.
+        //
+        // SECOND TYPE:
+        //
+        // Commands that don’t require mentioning the bot nor a prefix
+        // e.g. gimme cute
+        //
+        // which can also be run as
+        //      @Changeling Bot gimme cute
+        //      ~gimme cute
+
+        // cmdTxt: the command itself
+        // args: the arguments of the command
+        let cmdTxt, args;
+
+        // If bot cannot send messages in the current channel
+        if (
+            msg.channel.guild &&
+            ! msg.channel.permissionsOf(bot.user.id).has('sendMessages')
+        ) {
             return;
         }
 
-        //Hot reload all possible files (if user is Chryssi)
-        if (
-            msg.content.startsWith(options.prefix + 'reload') &&
-            msg.author.id === "185298624555646976"
+        // Prefix included in message
+        if (msg.content.startsWith(msgPrefix)) {
+            // No need to do anything special
+
+            // Format message to remove command prefix
+            content = msg.content.substring(
+                msgPrefix.length,
+                msg.content.length
+            );
+        }
+        // Bot mention included in message
+        else if (msg.content.startsWith(bot.user.mention + ' ')) {
+            content =
+                msg.content.replace(bot.user.mention + ' ', '');
+        }
+        // setprefix and checkprefix
+        // Prefix command override so that prefix can be used with the
+        // default command prefix to prevent forgotten prefixes
+        else if (
+            (
+                msg.content.startsWith(options.prefix + 'setprefix') ||
+                msg.content.startsWith(options.prefix + 'checkprefix')
+            ) &&
+            msgPrefix !== options.prefix
         ) {
-            reloadModules(msg);
+            content = msg.content.replace(options.prefix, '');
         }
-
-        // If Changeling Bot is mentioned and prefix-less command is an alias as
-        // stated in mentionCommands.
-        // Note that this is above the
-        //     !msg.channel.guild && !msg.content.startsWith(options.prefix)
-        // if statement, which is important to ensure that messages like
-        //     @Changeling Bot :heart:
-        // in a PM is still passed to this if statement first.
-        //
-        // Examples (first two are processed as ~respond heart, while last
-        // three are processed as ~respond thank you):
-        //     @Changeling Bot :heart:
-        //     :heart: @Changeling Bot
-        //     thank you@Changeling Bot
-        //     @Changeling Bot                  thank you
-        //
-        // Note that they can also be messages where the text and mention are on
-        // separate lines,
-        // like this:
-        //     @Changeling Bot
-        //     thank you
-        if (
-            ! msg.content.startsWith(options.prefix) &&
-            msg.content.includes(bot.user.mention) &&
-            mentionCommands.hasOwnProperty(
-                msg.content.replace(bot.user.mention, '').trim()
-            )
-        ) {
-            msg.content =
-                msgPrefix +
-                mentionCommands[
-                    msg.content.replace(bot.user.mention, '').trim()
-                ];
-        }
-
-        // If the message is a specific string (e.g. “gimme fluff”) that is an
-        // alias of a command (e.g. “~dpc cute”), convert it.
-        if (nonPrefixedCommands.hasOwnProperty(msg.content)) {
-            msg.content = msgPrefix + nonPrefixedCommands[msg.content];
-        }
-
-        // If stuff that isn't a command is used in a PM treat it as using
-        // cleverbot by adding the correct prefix as well as the 'chat' command
-        // text to the message
-        if (
-            ! msg.channel.guild &&
-            ! msg.content.startsWith(options.prefix) &&
-            ! nonPrefixedCommands.hasOwnProperty(msg.content)
-        ) {
-            // … except if command is a non-prefixed command alias
-            if (mentionCommands.hasOwnProperty(msg.content)) {
-                msg.content = msgPrefix + mentionCommands[msg.content];
-            } else {
-                msg.content = msgPrefix + "chat " + msg.content;
-            }
-        }
-
-        //If used in a Guild
-        if (msg.channel.guild) {
-            //If bot cannot send messages in the current channel
-            if (!msg.channel.permissionsOf(bot.user.id).has('sendMessages'))
-                return;
-
+        // No bot mention or prefix
+        else {
             // If Message is a tableFlip and the Guild has
             // tableflip(tableunflip) on return an unflipped table
-            if (msg.content === "(╯°□°）╯︵ ┻━┻")
+            // TODO: Test this
+            if (msg.channel.guild && msg.content === '(╯°□°）╯︵ ┻━┻') {
                 database.checkSetting(msg.channel.guild.id, 'tableflip').then(
                     () => bot.createMessage(
                         msg.channel.id,
-                        unflippedTables[~~(Math.random() * (unflippedTables.length))]
+                        unflippedTables[
+                            ~~(Math.random() * (unflippedTables.length))
+                        ]
                     )
                 ).catch(err => utils.fileLog(err));
+                return;
+            }
 
-            // Check if message starts with a bot user mention and if so replace
-            // with the correct prefix and the 'chat' command text
-            if (msg.content.replace(/<@!/, '<@').startsWith(bot.user.mention))
-                msg.content = msg.content.replace(/<@!/g, '<@').replace(
-                    bot.user.mention, msgPrefix + 'chat'
-                );
+            content = content;
+            cmdTxt = msg.content.split(' ')[0].toLowerCase();
 
-            // Prefix command override so that prefix can be used with the
-            // default command prefix to prevent forgotten prefixes
+            // needsPrefix defines whether or not a command can be run without
+            // a prefix OR by mentioning the bot
+            //
+            // If no bot mention or prefix supplied and needsPrefix is false,
+            // don’t run command. Also don’t run command if command doesn’t
+            // actually exist.
             if (
-                (
-                    msg.content.startsWith(options.prefix + 'setprefix') ||
-                    msg.content.startsWith(options.prefix + 'checkprefix')
-                ) &&
-                msgPrefix !== options.prefix
-            )
-                msg.content = msg.content.replace(options.prefix, msgPrefix);
+                ! commands.hasOwnProperty(cmdTxt) ||
+                ! commands[cmdTxt].needsPrefix === false
+            ) {
+                return;
+            }
         }
 
-        //If the message stats with the set prefix
-        if (msg.content.startsWith(msgPrefix)) {
-            var formatedMsg = msg.content.substring(msgPrefix.length, msg.content.length), //Format message to remove command prefix
-                cmdTxt = formatedMsg.split(' ')[0].toLowerCase(), //Get command from the formatted message
-                args = formatedMsg.split(' ').slice(1).join(' '); //Get arguments from the formatted message
-            if (commandAliases.hasOwnProperty(cmdTxt)) cmdTxt = commandAliases[cmdTxt]; //If the cmdTxt is an alias of the command
-            if (cmdTxt === 'channelmute') processCmd(msg, args, commands[cmdTxt], bot); //Override channelCheck if cmd is channelmute to unmute a muted channel
-            //Check if a Command was used and runs the corresponding code depending on if it was used in a Guild or not, if in guild checks for muted channel and disabled command
-            else if (commands.hasOwnProperty(cmdTxt)) database.checkChannel(msg.channel.id).then(() => database.checkCommand(msg.channel.guild, cmdTxt).then(() => processCmd(msg, args, commands[cmdTxt], bot)))
-        }
+        cmdTxt = content.split(' ')[0].toLowerCase();
+        args = content.split(' ').slice(1).join(' ');
+
+        // Like, actually run the command
+
+        runCmd({
+            msg: msg, args: args, cmdTxt: cmdTxt, bot: bot, i: 0,
+            content: content
+        }).then(response => {
+            // If command needs embed permissions and bot doesn't have it
+            if (
+                response.embed !== undefined &&
+                msg.channel.guild &&
+                !(msg.channel.permissionsOf(bot.user.id).has('embedLinks'))
+            ) {
+                return;
+            }
+            // Main Processing of Command (uses Promises)
+            //
+            // Commands return a Promise which can contain a 'message, 'upload',
+            // 'embed' or 'disableEveryone' to send message being the message
+            // content, upload being whatever file you'd like to, embed being a
+            // Discord embed object or allow the message to mention everyone
+            // with @everyone
+            //
+            // Commands also can return a edit function which allows you to edit
+            // messages while also taking the inital sent message object
+            //
+            // They can also return a delete after 5s boolean which deletes the
+            // sent message after 5s
+            msg.channel.createMessage({
+                // Message content
+                content: response.message ? response.message : '(empty message)',
+                // Message embed
+                embed: response.embed ? response.embed : undefined,
+                // Allow/deny use of everyone or @here in messages
+                disableEveryone: response.disableEveryone != null
+                    ? response.disableEveryone
+                    : undefined
+            }, response.upload).then(message => {
+                // Edit sent message
+                // response.edit can either return a string or a promise
+                if (response.edit) {
+                    // If response.edit retrurns a promise
+                    if (Promise.resolve(response.edit) === response.edit) {
+                        response.edit.then((resolve_message) => {
+                            message.edit(resolve_message)
+                        }).catch(err => utils.fileLog(err));
+                    }
+                    // If response.edit returns a string
+                    else {
+                        message.edit(response.edit(message))
+                    }
+                }
+
+                // Check for delete sent message
+                if (response.delete) utils.messageDelete(message);
+            }).catch(
+                // Log to console and file if error
+                err => utils.fileLog(err)
+            );
+        });
+
     }
+
 });
 
 function evalInput(msg, args) {
@@ -331,9 +418,10 @@ function reloadModules(msg) {
         utils = reload('./utils/utils.js');
         database = reload('./utils/database.js');
         options = reload('./options/options.json');
-        processCmd = reload('./utils/commandHandler.js');
+        runCmd = reload('./utils/commandRun.js');
         usageChecker = reload('./utils/usageChecker.js');
         commandHandler = reload('./utils/commandHandler.js');
+        admins = reload('./options/admins.json');
         playing = reload('./lists/playing.json');
         commandLoader.load().then(() => {
             console.log(botC('@' + bot.user.username + ': ') + errorC('Successfully Reloaded All Modules'));

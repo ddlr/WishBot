@@ -7,7 +7,9 @@ module.exports = {
     permissions: {
         'manageGuild': true
     },
-    process: (msg, args, bot) => {
+    process: obj => {
+        var args = obj.args,
+            bot = obj.bot;
         return new Promise(resolve => {
             //Print shard info
             if (args === 'shards') {

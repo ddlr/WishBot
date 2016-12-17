@@ -22,7 +22,9 @@ setting welcome/leave [message] - Sets welcome/leave to 'message'\``,
     permissions: {
         'manageGuild': true
     },
-    process: (msg, args) => {
+    process: obj => {
+        var msg = obj.msg,
+            args = obj.args;
         return new Promise(resolve => {
             //If args are tableflip then toggle the tableflip setting
             if (args.toLowerCase() === 'tableflip') Database.toggleSetting(msg.channel.guild.id, args).then(result =>
