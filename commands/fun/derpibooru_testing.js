@@ -9,15 +9,11 @@
 //
 // TODO: add a maximum limit to args length
 //
-// TODO: Add https caching
-//
 // TODO: Make selecting own filter a toggleable option
-//
-// TODO: Merge console.log() in catch() with somethingWentWrong()
 //
 // TODO: Move database to PostgreSQL and put filters in there
 //
-// TODO: Make somethingWentWrong() (i.e. log()) function names more sensible
+// TODO: Make reject() (i.e. log()) function names more sensible
 
 'use strict';
 
@@ -147,24 +143,6 @@ function checkIfFilter(f, filter, authorID) {
 // Main function
 function bacon(args, blehp, authorID) {
 
-    // Error-handling function used in this command
-    function somethingWentWrong(obj) {
-        // obj.log[0]: Function from which this function was called
-        // obj.log[1]: Log message
-        // obj.message: Message to return to user running Discord command
-        // obj.request: HTTPS request callback, for stopping the HTTPS request
-        log(['error', obj.log[0], obj.log[1]]);
-
-        // Nom on the response data to free up memory
-        if (obj.request !== undefined) obj.request.resume();
-        var resolveMessage = 'Error:\n' + obj.message;
-        // blehp() is the equivalent of the resolve() function in promises
-        // i.e. blehp() is what helps output resolveMessage to Discord
-        blehp(resolveMessage);
-    }
-
-    // TODO: Return filter and tags variable
-    // TODO: Replace somethingWentWrong with throw
     var getFilterAndTags = new Promise((resolve, reject) => {
 
         var filter, tags;
@@ -191,7 +169,7 @@ function bacon(args, blehp, authorID) {
                     // TODO: Make this available to mods as well, and make it
                     // toggleable (also see the checkIfFilter function)
                     if (! (admins.indexOf(authorID) > -1)) {
-                        somethingWentWrong({
+                        reject({
                             log: [
                                 '',
                                 'User doesn’t have permission to select own ' +
@@ -229,10 +207,13 @@ function bacon(args, blehp, authorID) {
                             ) {
                                 return filters[filter].tags;
                             } else {
-                                somethingWentWrong([
-                                  `filter ${filter} doesn’t exist!`
-                                ]);
-                                return ''; // TODO: Redundant?
+                                reject({
+                                    log: [
+                                        'checkIfFilterTags',
+                                        `filter ${filter} doesn’t exist!`
+                                    ],
+                                    message: `Filter ${filter} doesn’t exist!`
+                                });
                             }
                         }
 
@@ -244,10 +225,18 @@ function bacon(args, blehp, authorID) {
                             if (i < 3) {
                                 return blohp(filters[filter].aliasOf, i + 1);
                             } else {
-                                somethingWentWrong([
-                                  'filter aliases in filters database nested too' +
-                                  'deep!'
-                                ]);
+                                reject({
+                                    log: [
+                                        'blohp',
+                                        'filter aliases in filters database' +
+                                        'nested too deep!'
+                                    ],
+                                    message:
+                                        'There’s something wrong with the ' +
+                                        'custom filter database. This is a ' +
+                                        'problem with the command; please ' +
+                                        'let the developer know.'
+                                });
                             }
                         } else {
                             return [filter, checkIfFilterTags()];
@@ -259,7 +248,13 @@ function bacon(args, blehp, authorID) {
                 // filters object
                 else {
                     // Return error
-                    somethingWentWrong([ `filter ${filter} doesn’t exist!` ]);
+                    reject({
+                        log: [
+                            'getFilterAndTags',
+                            `filter ${filter} doesn’t exist!`
+                        ],
+                        message: `filter ${filter} doesn’t exist!`
+                    });
 
                     // The rest of this function shouldn’t run but in case it does,
                     // prepare anyway
@@ -402,7 +397,7 @@ function bacon(args, blehp, authorID) {
 
                 // Error: Invalid status code
                 if (res.statusCode !== 200) {
-                    somethingWentWrong({
+                    reject({
                         log: [
                             'getTotalNo',
                             `Returned HTTP status code ${res.statusCode}`
@@ -414,7 +409,7 @@ function bacon(args, blehp, authorID) {
                 }
                 // Error: Not actually JSON
                 else if (! /^application\/json/.test(contentType) ) {
-                    somethingWentWrong({
+                    reject({
                         log: [
                             'getTotalNo',
                             'Derpibooru did not return JSON. ' +
@@ -448,9 +443,7 @@ function bacon(args, blehp, authorID) {
                             tags: tags
                         });
                     } catch (e) {
-                        // Note that somethingWentWrong already exits the
-                        // getTotalNo promise
-                        somethingWentWrong({
+                        reject({
                             log: ['getTotalNo', e.message],
                             message: 'Sorry, something went wrong in parsing' +
                               'total number of pages!'
@@ -459,7 +452,7 @@ function bacon(args, blehp, authorID) {
                 });
 
                 res.on('error', e => {
-                    somethingWentWrong({
+                    reject({
                         log: ['getTotalNo', e.message],
                         message: 'Sorry, something went wrong in getting' +
                           'total number of pages!'
@@ -468,7 +461,7 @@ function bacon(args, blehp, authorID) {
 
                 res.on('socket', function (socket) {
                     res.on('timeout', e => {
-                        somethingWentWrong({
+                        reject({
                             log: ['getTotalNo', e.message],
                             message: 'Sorry, something went wrong with ' +
                               'connecting to Derpibooru. Please let Chryssi ' +
@@ -491,7 +484,7 @@ function bacon(args, blehp, authorID) {
 
             // Check if resultsTotal is actually a valid number
             if (resultsTotal < 0 || ( ! Number.isInteger(resultsTotal))) {
-                somethingWentWrong({
+                reject({
                     log: [
                         'getTotalNo.then',
                         'Total no. of search results isn’t a number' +
@@ -528,7 +521,7 @@ function bacon(args, blehp, authorID) {
 
                 // Error: Invalid status code
                 if (res.statusCode !== 200) {
-                    somethingWentWrong({
+                    reject({
                         log: [
                             'https.get',
                             `Returned HTTP status code ${res.statusCode}`
@@ -539,7 +532,7 @@ function bacon(args, blehp, authorID) {
                     });
                 } // Error: Not actually JSON
                 else if ( ! /^application\/json/.test(contentType) ) {
-                    somethingWentWrong({
+                    reject({
                         log: [
                             'https.get',
                             `Received ${res.contentType} instead of JSON.`
@@ -583,7 +576,7 @@ function bacon(args, blehp, authorID) {
                     } catch (e) {
                         // The most common reason this will happen is when there are
                         // no results (thus JSON cannot be parsed).
-                        somethingWentWrong({
+                        reject({
                             log: ['getTotalNo.then', e.message],
                             message: 'Sorry, Derpibooru didn’t return any results.',
                         });
@@ -591,7 +584,7 @@ function bacon(args, blehp, authorID) {
                 }); // res.on('end' ... )
 
                 res.on('error', (e) => {
-                    somethingWentWrong({
+                    reject({
                         log: ['getTotalNo.then', e.message],
                         message: 'Sorry, Derpibooru returned an error.'
                     });
@@ -599,7 +592,7 @@ function bacon(args, blehp, authorID) {
 
                 res.on('socket', function (socket) {
                     res.on('timeout', (e) => {
-                        somethingWentWrong({
+                        reject({
                             log: ['getTotalNo.then', e.message],
                             message: 'Sorry, connecting to Derpibooru timed out.'
                         })
@@ -611,14 +604,33 @@ function bacon(args, blehp, authorID) {
         });
     }).then(function (message) {
         blehp(message);
-    }).catch(reason => {
-        // TODO: Merge this with somethingWentWrong()
-        // Getting total number of search results failed somehow
-        console.log(reason);
-        // If catch() caught an Error object, return error.message. If not an
-        // Error object, assume it’s a string
-        if (reason instanceof Error) blehp('Error: ' + reason.message);
-        else blehp(reason);
+    }).catch(err => {
+        // If catch() caught an Error object, return error.message
+        if (err instanceof Error) blehp('Error: ' + reason.message);
+        // If error was the result of a promise reject()
+        else if (typeof err === 'object') {
+            // err.log[0]: Function from which this function was called
+            // err.log[1]: Log message
+            // err.message: Message to return to user running Discord command
+            // err.request: HTTPS request callback, for stopping the HTTPS request
+            log(['error', err.log[0], err.log[1]]);
+
+            // Nom on the response data to free up memory
+            if (err.request !== undefined) err.request.resume();
+            var resolveMessage = 'Error:\n' + err.message;
+            // blehp() is the equivalent of the resolve() function in promises
+            // i.e. blehp() is what helps output resolveMessage to Discord
+            blehp(resolveMessage);
+        }
+        else if (typeof err === 'string') blehp(reason);
+        else {
+            // This really shouldn’t happen
+            console.log(errorC('derpibooru:'), err);
+            blehp(
+                'Some weird error occurred. This is a bug in the command; ' +
+                'Please let the developer know.'
+            );
+        }
     }); // getTotalNo.catch()
 
 }
