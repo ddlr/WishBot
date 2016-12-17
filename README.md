@@ -94,4 +94,5 @@ module.exports = {
 ====
 [![forthebadge](http://forthebadge.com/images/badges/built-with-love.svg)](http://forthebadge.com)
 ====
-**Disclaimer**: Like Mei’s Wishbot Core on which this was based, no support will currently be given for this code.
+**Disclaimer**: Like Mei’s Wishbot Core on which this was based, no support
+will currently be given for this code. Also, things will break. A lot.
