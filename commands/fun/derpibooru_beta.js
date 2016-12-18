@@ -1,12 +1,6 @@
 // Made by Chryssi
 // 22 Nov 2016 -- 13 Dec 2016
 //
-// TODO: Change alias dpt to dpc when done testing
-//
-// TODO: Use embed for image
-// refer to commands/bot/whois.js for example
-// https://discordapp.com/developers/docs/resources/channel#embed-object
-//
 // TODO: add a maximum limit to args length
 //
 // TODO: Make selecting own filter a toggleable option
@@ -191,7 +185,8 @@ function bacon(args, blehp, authorID) {
                 else if (filters.hasOwnProperty(filter)) {
                     function blohp(filter, i) {
                         // Check if filter is an alias of another filter
-                        // Also prevent recursion (i is max number of times to run)
+                        // Also prevent recursion (i is max number of times to
+                        // run)
                         //
                         // This is the maximum level you can nest aliases (3):
                         // a { aliasOf: 'b' },
@@ -255,31 +250,6 @@ function bacon(args, blehp, authorID) {
                         ],
                         message: `filter ${filter} doesn’t exist!`
                     });
-
-                    // The rest of this function shouldn’t run but in case it does,
-                    // prepare anyway
-
-                    // Check if filters object has a default filter to fall
-                    // back to
-                    if (filters.hasOwnProperty('default')) {
-                      // Set the filter to default to not trip up
-                      // checkIfFilter down below… or something like that.
-                      //
-                      // TODO: Find out if changing the filter variable
-                      // actually matters
-                      filter = 'default';
-                      filterTags =
-                        filters[filter].hasOwnProperty(tags)
-                          ? filters[filter].tags
-                          : '';
-                    }
-                    // Default filter doesn't exist -- what the fuck?
-                    // Since there's nothing to fall back to, leave filter
-                    // and filterTags blank
-                    else {
-                      filter = '';
-                      filterTags = '';
-                    }
                 }
                 log(['misc', 'filterTags', filterTags]);
 
@@ -301,7 +271,7 @@ function bacon(args, blehp, authorID) {
                         '',
                         'tags specified by both filter and custom tags'
                     ]);
-                    tags = filterTags + ',' + customTags;
+                    tags = filterTags + ' ' + customTags;
                 } else if (filterTags && (! customTags)) {
                     // Only filterTags exist
                     log([
@@ -319,11 +289,11 @@ function bacon(args, blehp, authorID) {
                     ]);
                     tags = customTags;
                 } else {
-                    // If the filter name stated by user doesn’t actually exist. This
-                    // should only happen if filter is set as an integer (e.g.
-                    // derpibooru_custom `133664), as if the filter is not an integer
-                    // and doesn’t exist, filterTags should already have been set to
-                    // those of the default, above.
+                    // If the filter name stated by user doesn’t actually exist.
+                    // This should only happen if filter is set as an integer
+                    // (e.g. derpibooru_custom `133664), as if the filter is not
+                    // an integer and doesn’t exist, filterTags should already
+                    // have been set to those of the default, above.
                     log([
                         'warn',
                         '',
@@ -584,7 +554,12 @@ function bacon(args, blehp, authorID) {
                                 title: 'Derpibooru page →',
                                 url: 'https://derpibooru.org/' + source,
                                 description:
-                                    tags === '' ? '' : `**Tags used:** ${tags}`,
+                                    tags === ''
+                                        ? ''
+                                        : tags.length <= 120
+                                            ? `**Tags:** ${tags}`
+                                            : '**Tags:** *(too long to list)*'
+                                        ,
                                 color: ((1 << 24) * Math.random() | 0),
                                 image: {
                                     url: 'https:' + image,
@@ -600,7 +575,7 @@ function bacon(args, blehp, authorID) {
                         // are no results (thus JSON cannot be parsed).
                         reject({
                             log: ['getTotalNo.then', e.message],
-                            message: 'Sorry, Derpibooru didn’t return any results.',
+                            message: 'Derpibooru didn’t return any results.',
                         });
                     }
                 }); // res.on('end' ... )
@@ -608,7 +583,7 @@ function bacon(args, blehp, authorID) {
                 res.on('error', e => {
                     reject({
                         log: ['getTotalNo.then', e.message],
-                        message: 'Sorry, Derpibooru returned an error.'
+                        message: 'Derpibooru returned an error.'
                     });
                 });
 
@@ -616,7 +591,7 @@ function bacon(args, blehp, authorID) {
                     res.on('timeout', e => {
                         reject({
                             log: ['getTotalNo.then', e.message],
-                            message: 'Sorry, connecting to Derpibooru timed out.'
+                            message: 'Connecting to Derpibooru timed out.'
                         });
                         res.abort();
                     });
@@ -635,7 +610,7 @@ function bacon(args, blehp, authorID) {
             // err.log[0]: Function from which this function was called
             // err.log[1]: Log message
             // err.message: Message to return to user running Discord command
-            // err.request: HTTPS request callback, for stopping the HTTPS request
+            // err.request: request callback, for stopping the HTTPS request
             log(['error', err.log[0], err.log[1]]);
 
             // Nom on the response data to free up memory
@@ -660,33 +635,39 @@ function bacon(args, blehp, authorID) {
 
 module.exports = {
     usage:
-      'Returns a **randomly-selected image from Derpibooru**. This version ' +
-      'of the command allows for custom Derpibooru filters and filtering by ' +
-      'search queries. Inspired by fourhts’ Cute Horses and based on this ' +
-      'bot’s ``derpibooru`` command. (http://wikipedia.sexy/hoers)\n' +
-      '\n' +
-      '**Usage:**\n' +
-      '```' +
-      'Random image: dpc\n' +
-      'Use a predefined filter (fourths, default, raridash, fourhts) by ' +
-      'using a backtick (`): dpc `fourths\n' +
-      'Use custom tags (like Derpibooru’s search function): dpc changeling, ' +
-      'raripie\n' +
-      'Why not both: dpc `fourths artist:raridashdoodles' +
-      '```' +
-      '\n' +
-      '**List of filters:**\n' +
-      '`` `rdd``: employs tags cute,-comic,raridash,artist:raridashdoodles\n' +
-      '`` `fourths``, `` `fourhts``: uses filter 133664, ' +
-      'and employs tags (raridash OR sciset OR taviscratch OR raripie OR ' +
-      'appleshy OR hoodies OR twinkie OR rarilight OR thoraxspike) AND cute ' +
-      'AND NOT comic\n' +
-      '`` `default``: uses filter 133664 (sensible filter, hides unpleasant ' +
-      'stuff)\n' +
-      'Or alternatively, use a Derpibooru filter in the format `` `filter``,' +
-      ' e.g. `` `133664`` for https://derpibooru.org/filters/133664.'
-      ,
-    aliases: ['dpt'],
+`Returns a **randomly-selected image from Derpibooru**. This version of the \
+command allows for custom Derpibooru filters and filtering by search queries. \
+Inspired by fourhts’ Cute Horses. (http://wikipedia.sexy/hoers)
+
+**Usage:**
+\`\`\`markdown
+# Random image
+~dp
+# Use a predefined filter (fourths, default, raridash, fourhts) by using a \
+backtick (\`):
+~dp \`fourths
+# Use custom tags, like Derpibooru’s search function:
+~dp changeling OR raripie
+# Why not both (note the obligatory space after the filter name):
+~dp \`fourths , artist:raridashdoodles
+~dp \`fourths OR (changeling, cute)
+\`\`\`
+
+**List of filters:**
+\`\`\`markdown
+\`rdd: uses filter 133664, and employs tags \`cute, -comic, raridash, \
+artist:raridashdoodles\`
+\`fourths, \`fourhts: uses filter 133664, and employs tags \
+\`(raridash OR sciset OR taviscratch OR raripie OR appleshy OR hoodies OR \
+twinkie OR rarilight OR thoraxspike) AND cute AND NOT comic\`
+\`default: uses filter \`133664\` (sensible filter, hides unpleasant \
+stuff). This is the default.
+Or alternatively, use a Derpibooru filter in the format \`\` \`filter\`\`, \
+e.g. \`133664 for https://derpibooru.org/filters/133664. This is \
+admin-only at the moment.
+\`\`\``
+        ,
+    aliases: ['dpb'],
     dm: true,
     delete: false,
     cooldown: 10,
