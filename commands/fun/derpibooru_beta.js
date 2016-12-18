@@ -545,7 +545,7 @@ function bacon(args, blehp, authorID) {
                 res.setEncoding('utf8');
                 let raw = '';
 
-                res.on('data', (chunk) => raw += chunk);
+                res.on('data', chunk => raw += chunk);
                 res.on('end', () => {
                     try {
                         // Parsed JSON response
@@ -565,17 +565,39 @@ function bacon(args, blehp, authorID) {
                         // Image source
                         let source = selection.id;
 
-                        // Message returned
-                        let result = '';
-
-                        result += 'https:' + image + ' ' +
-                          '(Source: <https://derpibooru.org/' + source +
-                          '>)';
+                        // Message (or rather, embed) returned
+                        //
+                        // color is in format 0xFFFFFF, i.e. any integer from
+                        //     0 to 2**24.
+                        // In this case, set a random colour by doing this:
+                        //    1 << 24 shifts the 1 24 positions to the left,
+                        //        giving what is equal to 2**24
+                        //    Math.random() - turns into random number from
+                        //        zero to 2**24, of course
+                        //    | 0 - bitwise OR operator (for integers). In
+                        //        this case, this takes advantage of the
+                        //        fact that bitwise operators remove
+                        //        anything after decimal point
+                        //    Output is a random integer from 0 to 2**24.
+                        let result = {
+                            embed: {
+                                title: 'Derpibooru page →',
+                                url: 'https://derpibooru.org/' + source,
+                                description:
+                                    tags === '' ? '' : `**Tags used:** ${tags}`,
+                                color: ((1 << 24) * Math.random() | 0),
+                                image: {
+                                    url: 'https:' + image,
+                                    height: 500,
+                                    width: 200,
+                                },
+                            }
+                        };
 
                         resolve(result);
                     } catch (e) {
-                        // The most common reason this will happen is when there are
-                        // no results (thus JSON cannot be parsed).
+                        // The most common reason this will happen is when there
+                        // are no results (thus JSON cannot be parsed).
                         reject({
                             log: ['getTotalNo.then', e.message],
                             message: 'Sorry, Derpibooru didn’t return any results.',
@@ -583,7 +605,7 @@ function bacon(args, blehp, authorID) {
                     }
                 }); // res.on('end' ... )
 
-                res.on('error', (e) => {
+                res.on('error', e => {
                     reject({
                         log: ['getTotalNo.then', e.message],
                         message: 'Sorry, Derpibooru returned an error.'
@@ -591,11 +613,11 @@ function bacon(args, blehp, authorID) {
                 });
 
                 res.on('socket', function (socket) {
-                    res.on('timeout', (e) => {
+                    res.on('timeout', e => {
                         reject({
                             log: ['getTotalNo.then', e.message],
                             message: 'Sorry, connecting to Derpibooru timed out.'
-                        })
+                        });
                         res.abort();
                     });
                 });
@@ -603,6 +625,7 @@ function bacon(args, blehp, authorID) {
             }); // let req = https.get
         });
     }).then(function (message) {
+        // Success! Return message (or in this case, embed)
         blehp(message);
     }).catch(err => {
         // If catch() caught an Error object, return error.message
