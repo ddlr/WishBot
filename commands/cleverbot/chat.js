@@ -4,7 +4,7 @@ var Cleverbot = require('cleverbot-node'),
 Cleverbot.prepare(() => {}); //Prepares the cleverbot module for use
 
 module.exports = {
-    usage: "**Chat** with the bot using the **Cleverbot API**.\n\n`chat [text]`\n`@BotMention [text]` or `chat [text]",
+    usage: "**Chat** with the bot using the **Cleverbot API**.\n\n`chat [text]`\n`@BotMention [text]` or `chat [text]`",
     aliases: ['clever', 'cleverbot', 'talk'],
     process: obj => {
         var msg = obj.msg;
