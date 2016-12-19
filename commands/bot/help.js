@@ -35,7 +35,13 @@ module.exports = {
                 // Help object for sorting by type before sending
                 let help = {};
                 // Start of help message by default
-                let helpMsg = `**__${bot.user.username}'s Commands:__**\n`;
+                let helpMsg =
+`**__${bot.user.username}'s Commands:__**
+
+Note that most commands require a **prefix** or **mentioning the bot** at the \
+start to run, e.g. \`~ping\` (default is a tilde, may be different depending \
+on server) or \`@Changeling Bot ping\`. See **Requires prefix or bot \
+mention** in \`~help (name of command of alias)\` to check.\n`;
 
                 // Check if command should be included in output of help command
                 // Prints true if yes, false if no
@@ -115,7 +121,7 @@ module.exports = {
                 helpMsg += '\n';
                 // Add aliases list to help output
                 helpMsg += aliases.length > 0
-                             ? '\n**Aliases:** ' +
+                             ? '\n**Command aliases:** ' +
                                aliases.sort().map(cmd => '`' + cmd + '`').join(', ')
                              : '';
                 //Return help message
@@ -125,7 +131,7 @@ module.exports = {
                         '\n\nFor additional info on a specific command or ' +
                         'alias, including whether a command or alias works ' +
                         'without a prefix or bot mention, use `help ' +
-                        '[command or alias goes here]`.'
+                        '(command or alias goes here)`, e.g. `help dp`.'
                 });
             }
         });
