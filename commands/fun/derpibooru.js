@@ -663,12 +663,12 @@ and cute)
 **List of filters:**
 \`\`\`markdown
 # \`rdd
-employs tags \`cute, -comic, raridash, \
-artist:raridashdoodles\`
+employs tags:
+    cute, -comic, raridash, artist:raridashdoodles
 # \`fourths, \`fourhts
-employs tags \`(raridash OR sciset OR taviscratch OR \
-raripie OR appleshy OR hoodies OR twinkie OR rarilight OR thoraxspike) AND \
-cute AND NOT comic\`
+employs tags:
+    (raridash OR sciset OR taviscratch OR raripie OR appleshy OR hoodies OR \
+twinkie OR rarilight OR thoraxspike) AND cute AND NOT comic
 
 Or alternatively, use a Derpibooru filter in the format \`filter, e.g. \
 \`133664 for the filter at https://derpibooru.org/filters/133664. This is
