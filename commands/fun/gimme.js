@@ -7,8 +7,8 @@ module.exports = {
 
 **Usage:**
 
-\`gimme fluff\` or \`gimme cute\`: runs \`~dp cute,-oc,-screencap\`\n' +
-\`gimme fwaf\` and \`gimme mwap\`: find out yourself ;)'
+\`gimme fluff\` or \`gimme cute\`: runs \`~dp cute,-oc,-screencap\`
+\`gimme fwaf\` and \`gimme mwap\`: find out yourself ;)`
         ,
     dm: true,
     delete: false,
