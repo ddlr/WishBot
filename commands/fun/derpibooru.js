@@ -669,9 +669,8 @@ cute, -comic, raridash, artist:raridashdoodles
 twinkie OR rarilight OR thoraxspike) AND cute AND NOT comic
 
 Or alternatively, use a Derpibooru filter in the format \`filter, e.g. \
-\`133664 for the filter at https://derpibooru.org/filters/133664. This is
-admin-only \
-at the moment.
+\`133664 for the filter at https://derpibooru.org/filters/133664. This is \
+admin-only at the moment.
 \`\`\``
         ,
     aliases: ['dp', 'dpc'],
