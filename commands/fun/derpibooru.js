@@ -633,7 +633,8 @@ function bacon(args, blehp, authorID) {
 
 module.exports = {
     usage:
-`Returns a **randomly-selected image from Derpibooru**. This version of the \
+`Returns a **randomly-selected image from Derpibooru**, with the ability to \
+filter by using search queries and predefined “filters”. This version of the \
 command allows for custom Derpibooru filters and filtering by search queries. \
 Inspired by fourhts’ Cute Horses. (http://wikipedia.sexy/hoers)
 
@@ -660,11 +661,11 @@ and cute)
 ~dp \`fourths OR (changeling, cute)
 \`\`\`
 
-**List of filters:**
+**List of “filters”:**
 \`\`\`markdown
-# \`rdd - employs tags:
+# \`rdd is identical to:
 cute, -comic, raridash, artist:raridashdoodles
-# \`fourths or \`fourhts - employs tags:
+# \`fourths or \`fourhts is identical to:
 (raridash OR sciset OR taviscratch OR raripie OR appleshy OR hoodies OR \
 twinkie OR rarilight OR thoraxspike) AND cute AND NOT comic
 
