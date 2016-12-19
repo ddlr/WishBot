@@ -2,10 +2,13 @@
 const runCmd = require('./../../utils/commandRun.js');
 
 module.exports = {
-    usage: 'A fun way to run a particular preset of commands.\n' +
-        '**Usage:**\n' +
-        '``gimme fluff`` or ``gimme cute``: runs ``dpc cute,-oc,-screencap``\n' +
-        '``gimme fwaf`` and ``gimme mwap``: find out yourself ;)'
+    usage:
+`A fun way to run a particular preset of commands.
+
+**Usage:**
+
+\`gimme fluff\` or \`gimme cute\`: runs \`~dp cute,-oc,-screencap\`\n' +
+\`gimme fwaf\` and \`gimme mwap\`: find out yourself ;)'
         ,
     dm: true,
     delete: false,
