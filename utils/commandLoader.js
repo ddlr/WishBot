@@ -22,7 +22,24 @@ exports.load = function() {
                                 //Assigning Command Files to the Global Command Object
                                 //Try to load command and if theres an error log the file name as well as the error stack
                                 try {
-                                    commands[name.replace('.js', '')] = new Command(name.replace('.js', ''), folder, reload(`${__dirname}/../commands/${folder}/${name}`))
+                                    let commandName = name.replace(/\.js$/, '');
+                                    if (commandName.includes(' ')) {
+                                        console.log(
+                                            errorC(
+                                                `${name} did not load - ` +
+                                                'contains spaces.'
+                                            )
+                                        );
+                                        continue;
+                                    }
+                                    commands[commandName] =
+                                        new Command(
+                                            name.replace('.js', ''),
+                                            folder,
+                                            reload(
+                                                `${__dirname}/../commands/${folder}/${name}`
+                                            )
+                                        );
                                 } catch (e) {
                                     console.log(errorC(`${name} - ${e.stack}`))
                                 }
