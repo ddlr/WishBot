@@ -131,7 +131,7 @@ mention** in \`~help (name of command of alias)\` to check.\n`;
                         '\n\nFor additional info on a specific command or ' +
                         'alias, including whether a command or alias works ' +
                         'without a prefix or bot mention, use `help ' +
-                        '(command or alias goes here)`, e.g. `help dp`.'
+                        '(name of command or alias)`, e.g. `help dp`.'
                 });
             }
         });
