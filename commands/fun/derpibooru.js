@@ -662,12 +662,10 @@ and cute)
 
 **List of filters:**
 \`\`\`markdown
-# \`rdd
-employs tags:
-    cute, -comic, raridash, artist:raridashdoodles
-# \`fourths, \`fourhts
-employs tags:
-    (raridash OR sciset OR taviscratch OR raripie OR appleshy OR hoodies OR \
+# \`rdd - employs tags:
+cute, -comic, raridash, artist:raridashdoodles
+# \`fourths or \`fourhts - employs tags:
+(raridash OR sciset OR taviscratch OR raripie OR appleshy OR hoodies OR \
 twinkie OR rarilight OR thoraxspike) AND cute AND NOT comic
 
 Or alternatively, use a Derpibooru filter in the format \`filter, e.g. \
