@@ -562,10 +562,8 @@ function bacon(args, blehp, authorID) {
                                         ,
                                 color: ((1 << 24) * Math.random() | 0),
                                 image: {
-                                    url: 'https:' + image,
-                                    height: 500,
-                                    width: 200,
-                                },
+                                    url: 'https:' + image
+                                }
                             }
                         };
 
@@ -647,8 +645,8 @@ and/or isn’t SFW. You can see a list of the tags blocked here: \
 \`\`\`markdown
 # Return random image from Derpibooru
 ~dp
-# Use a predefined filter (fourths, default, raridash, fourhts) by using a \
-backtick (\`):
+# Use a predefined filter (fourths, raridash, fourhts) by using a backtick \
+(\`):
 ~dp \`fourths
 # Return random image with the following tags (in the same format as you \
 would in Derpibooru’s search box):
@@ -657,7 +655,8 @@ would in Derpibooru’s search box):
 ~dp \`fourths AND artist:raridashdoodles
 ## which is equivalent to (notice the space)
 ~dp \`fourths , artist:raridashdoodles
-
+# Search for images that match the tags in the fourths filter OR (changeling \
+and cute)
 ~dp \`fourths OR (changeling, cute)
 \`\`\`
 
@@ -701,7 +700,7 @@ at the moment.
                             log([
                                 'misc',
                                 '',
-                                'resolving message: ' + message
+                                'resolving message: ' + JSON.stringify(message)
                             ]);
                             resolve(output);
                         },
@@ -711,7 +710,8 @@ at the moment.
                     log([
                         'misc',
                         '',
-                        'returning output of derpibooru: ' + message
+                        'returning output of derpibooru: ' +
+                        JSON.stringify(message)
                     ]);
                     resolve(message);
                 }).catch(e => {
