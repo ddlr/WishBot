@@ -61,14 +61,15 @@ TO SET UP DATABASE:
 > CREATE DATABASE blehp;
 > USE blehp;
 > CREATE TABLE blehp.server_settings (guild_id CHAR(64) charset utf8,
-      settings national varchar(256), disabled_commands national varchar(256));
+      settings national varchar(256), disabled_commands national varchar(256),
+      channel_id CHAR(64) charset utf8);
 > CREATE TABLE blehp.channel_ignores (channel_id CHAR(64) charset utf8);
 
 TO LIST TABLES:
 > SHOW TABLES;
 
 TO LIST ENTRIES OF TABLE:
-> SELECT * FROM blehp;
-> SELECT name_of_column FROM blehp;
+> SELECT * FROM table_name;
+> SELECT name_of_column FROM table_name;
 
 MySQL default port is 3306.
