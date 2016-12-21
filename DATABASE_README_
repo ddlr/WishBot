@@ -1,0 +1,31 @@
+===============================================================================
+INSTALLING POSTGRESQL ON LINUX
+===============================================================================
+
+This will be for Arch Linux – I’ll test this on Ubuntu when I finish the
+database functionality.
+
+0. Navigate to this page:
+https://wiki.archlinux.org/index.php/PostgreSQL
+
+1. Read “Installing PostgreSQL” and follow the instructions
+
+2. Read “Create your first database/user” and follow the instructions
+
+3. Read “Familiarize with PostgreSQL”
+
+4. Run (name-of-user is optional if the database username is identical to your
+system username)
+$ psql -d name-of-database name-of-user
+
+to get to the interactive PostgreSQL console, and run this:
+
+CREATE TABLE channel_settings (
+    id                varchar(20) UNIQUE,
+    disabled_commands text[]
+);
+CREATE TABLE guild_settings (
+    id                varchar(20) UNIQUE,
+    settings          text[],
+    disabled_commands text[]
+);

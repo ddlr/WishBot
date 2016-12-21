@@ -2,6 +2,28 @@
 
 # WishBot Core [![Dependant Status](https://david-dm.org/hsiw/WishBot/status.svg?style=flat-square)](https://david-dm.org/hsiw/WishBot) [![License](https://img.shields.io/github/license/mashape/apistatus.svg?maxAge=2592000&style=flat-square)](./LICENSE) [![GitHub forks](https://img.shields.io/github/forks/hsiw/WishBot.svg?style=flat-square)](https://github.com/hsiw/WishBot/network) [![GitHub stars](https://img.shields.io/github/stars/hsiw/WishBot.svg?style=flat-square)](https://github.com/hsiw/WishBot/stargazers) [![eris](https://img.shields.io/badge/js-eris-blue.svg?style=flat-square)](https://abal.moe/Eris/)
 
+### Tips when installing this bot
+
+Before you run the bot, follow the instructions in `DATABASE_README_` (Arch
+Linux) OR follow the instructions for Ubuntu at
+<https://help.ubuntu.com/community/PostgreSQL> for the `setting`, `channelset`,
+and `serverset` commands to work. I haven’t tried the Ubuntu instructions but
+Google makes for a very helpful friend.
+
+Rename all the files that end in `-blank` and modify them accordingly. This is
+important for the bot to be able to be run.
+
+When you’ve set up the database, run `~initdb` while the bot’s running to set
+up the tables in the database.
+
+Once you’ve done all that, consider using something like `forever` to run the
+bot.
+
+```shell
+sudo npm install forever -g
+forever --minUptime 10000 --spinSleepTime 5000 index.js
+```
+
 ### How the command system works:
 ```js
 //File should be the name of the command (example test.js will make the command 'test')
