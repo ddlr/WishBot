@@ -122,7 +122,7 @@ A collection of examples:
                     // TODO: Add `Warning: ${toggleCmds[i]} doesn’t exist` to
                     //       resolve() output
                     console.log(
-                        errorC('channelset:') +
+                        warningC('channelset:') +
                         ` ${toggleCmds[i]} doesn’t exist`
                     );
                     toggleCmds_new.splice(
@@ -139,7 +139,7 @@ A collection of examples:
                 // disable won’t work.
                 else if (commands[toggleCmds[i]].togglable !== true) {
                     console.log(
-                        errorC('channelset:') +
+                        warningC('channelset:') +
                         ` ${toggleCmds[i]} cannot be changed because it ` +
                         'cannot be toggled'
                     );
@@ -173,10 +173,9 @@ A collection of examples:
                 );
                 resolve({
                     message:
-                        'Error: something went wrong in channeltoggle ' +
+                        'Error: something went wrong in channelset ' +
                         'command. This is a bug in the bot (pun ' +
-                        'unintended); please let the developer know.',
-                    delete: true
+                        'unintended); please let the developer know.'
                 });
             }); // catch
         }); // return new Promise

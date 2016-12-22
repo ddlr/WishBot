@@ -61,50 +61,65 @@ const util = require('util'),
 
 var pool = new pg.Pool(config);
 
+function tableNameAndCheckCol(type, column) {
+    // Return table name (based on the type parameter) and check column name if
+    // it’s a column that actually exists in said table (to mitigate SQL
+    // injections)
+    var table;
+    if (type === 'guild') {
+        table = guildTable;
+        if (guildTable_cols.includes(column)) {
+            // If column is in the guild_settings table
+            return table;
+        } else {
+            throw new Error(`column name ${column} isn’t valid in guild table`);
+        }
+    } else if (type === 'channel') {
+        table = channelTable;
+        if (channelTable_cols.includes(column)) {
+            // If column is in the channel_settings table
+            return table;
+        } else {
+            throw new Error(`column name ${column} isn’t valid in guild table`);
+        }
+    } else {
+        // If type isn’t either 'guild' or 'channel', i.e. if type is invalid
+        throw new Error(`type ${type} isn’t one of the following: guild, channel`);
+    }
+}
+
 function getRow(type, column, id) {
     // Arguments:
     // type   - name of table to change (guild or channel)
     // column - column to retrieve
     // id     - Discord guild or channel ID
+    //
+    // SELECT [column] FROM [table] WHERE id = [id];
     return new Promise((resolve, reject) => {
         // Retrieve disabled_commands or settings column from either guild_settings
         // or channel_settings table.
 
-        // Replace 'guild' and 'channel' with actual names of tables
+        // Replace 'guild' and 'channel' with actual names of tables via the
+        // tableNameAndCheckCol() function. This also checks the column if it
+        // actually exists in the respective table.
         var table;
-        if (type === 'guild') {
-            table = guildTable;
-            if (! guildTable_cols.includes(column))
-                reject({
-                    log: [
-                        'getRow',
-                        `column name ${column} is invalid (not in ` +
-                        'guildTable columns list)'
-                    ]
-                });
-        } else if (type === 'channel') {
-            table = channelTable;
-            if (! channelTable_cols.includes(column))
-                reject({
-                    log: [
-                        'getRow',
-                        `column name ${column} is invalid (not in ` +
-                        'channelTable columns list)'
-                    ]
-
-                });
-        }
-        // Object in reject() is in a similar format as in the reject() function
-        // of the ~derpibooru command (commands/fun/derpibooru.js)
-        // https://github.com/ddlr/WishBot/blob/chryssi/commands/fun/derpibooru.js#L607
-        //
-        // However, the message key is omitted because this will be set by the
-        // bot command that runs this (hopefully).
-        //
-        // TODO: Ensure that the above is true
-        else {
+        try {
+            var table = tableNameAndCheckCol(type, column);
+        } catch (e) {
+            console.log(
+                errorC('getRow (tableNameAndCheckCol):') +
+                e.message
+            );
+            // Object in reject() is in a similar format as in the reject() function
+            // of the ~derpibooru command (commands/fun/derpibooru.js)
+            // https://git.io/v1h32
+            //
+            // However, the message key is omitted because this will be set by the
+            // bot command that runs this (hopefully).
+            //
+            // TODO: Ensure that the above is true (also check in updateTable)
             reject({
-                log: ['getRow', `type is invalid (got ${type})`]
+                log: ['getRow (tableNameAndCheckCol)', e.message]
             });
         }
 
@@ -119,14 +134,15 @@ function getRow(type, column, id) {
                 resolve(response);
             }).catch(err => {
                 reject({
-                    log: ['getRow (pool.connect)', `Error: ${err.message}`]
+                    log: ['getRow (client.query)', `Error: ${err.message}`]
                 });
             });
         }).catch(err => {
-            // TODO: Make this more informative
-            console.log('blehpp');
+            reject({
+                log: ['getRow (pool.connect)', `Error: ${err.message}`]
+            });
         });
-    });
+    }); // return new Promise
 }
 
 function addRow(type, column, id) {
@@ -142,36 +158,63 @@ function addRow(type, column, id) {
 }
 
 function updateTable(type, column, value, id) {
-    // UPDATE [if type = 'guild' then guildTable
-    //         else if type = 'channel' then channelTable
-    //         else ERROR]
+    // TODO: Remove res_old once out of prod
+    //
+    // UPDATE [table]
     //     SET [column] = [value]
     //     WHERE id = [id]
     //     RETURNING [comma separated columns]; // This line is optional
     return new Promise((resolve, reject) => {
-        resolve();
-    });
+        // Replace 'guild' and 'channel' with actual names of tables via the
+        // tableNameAndCheckCol() function. This also checks the column if it
+        // actually exists in the respective table.
+
+        var table;
+        try {
+            var table = tableNameAndCheckCol(type, column);
+        } catch (e) {
+            console.log(
+                errorC('updateTable (tableNameAndCheckCol):') +
+                e.message
+            );
+            reject({
+                log: ['updateTable (tableNameAndCheckCol)', e.message]
+            });
+        }
+
+        // Update the row
+        pool.connect().then(client => {
+            client.query(
+                'UPDATE ' + table + ' SET ' + column + ' = $1 WHERE id = $2 ' +
+                'RETURNING ' + column,
+                [value, id]
+            ).then(res => {
+                client.release();
+                var response = res.rows[0][column];
+                resolve(response);
+            }).catch(err => {
+                reject({
+                    log: ['updateTable (client.query)', `Error: ${err.message}`]
+                });
+            });
+        }).catch(err => {
+            reject({
+                log: ['updateTable (pool.connect)', `Error: ${err.message}`]
+            });
+        });
+    }); // return new Promise
 }
 
-// Test function
-// This is an example of how to retrieve data
-/*
-pool.connect().then(client => {
-    client.query(
-        'SELECT disabled_commands FROM guild_settings WHERE id = $1',
-        ['185628587859116033']
-    ).then(res => {
-        client.release();
-        console.log(res.rows[0].disabled_commands);
-    }).catch(err => {
-        client.release();
-        console.log(err.message, err.stack);
-    });
-});
-*/
+// TODO: Support for returning channel and server at same time
+function formatTable(disabledCommands, enabledCommands) {
+    return `disabled commands: ${util.inspect(disabledCommands)}`;
+}
 
 exports.toggleCommands = (type, option, id, commands) => {
     // Holy mother of fuck is this a huge function compared to everything else
+    //
+    // This function enables/disables/toggles/checks the status of commands for
+    // either the channel or the entire guild (i.e. server).
     //
     // Arguments:
     // type     - which table to change (one with the guild IDs or the one with
@@ -182,33 +225,23 @@ exports.toggleCommands = (type, option, id, commands) => {
     //            ID)
     // commands - command(s) to enable/disable (array)
 
-    // Retrieve commands
-    //
-    // SELECT disabled_commands
-    //     FROM [if type = 'guild' then guildTable
-    //           else if type = 'channel' then channelTable
-    //           else ERROR]
-    //     WHERE id = [id];
-    //
-    // Change commands
-    //
-    // updateTable(type, column, value, id)
-
     // TODO: Limit commands to three elements
+
+    var res_old;
 
     return new Promise((resolve, reject) => {
         // TODO: Add rows if they don’t exist
         //
         // Retrieve the disabled commands for this guild or channel
-        getRow(type, 'disabled_commands', id).then(res_old => {
+        getRow(type, 'disabled_commands', id).then(res => {
             return new Promise((resolve, reject) => {
                 // This is only for testing purposes and lets us compare the
                 // disabled_commands before and after. slice() clones the array
-                // so that the changes in the switch () below don’t affect
-                // the old array.
+                // so that the switch () statements below don’t inadvertently
+                // affect both arrays instead of just one.
                 //
                 // http://stackoverflow.com/a/7486130
-                var res = res_old.slice();
+                res_old = res.slice();
 
                 // disabled_commands is empty, i.e. no disabled commands for
                 // this guild or channel
@@ -254,8 +287,17 @@ exports.toggleCommands = (type, option, id, commands) => {
                         break;
                     case 3:
                         // Check status of command(s)
+                        var enabledCommands = [];
+                        var disabledCommands = [];
                         for (let i = 0; i < commands.length; i++) {
-                            // TODO: Finish this
+                            // If command is currently disabled, insert into
+                            // the list of disabled commands
+                            if (res.includes(commands[i]))
+                                disabledCommands.push(commands[i]);
+                            // If command is currently enabled, insert into the
+                            // list of enabled commands
+                            else
+                                enabledCommands.push(commands[i]);
                         }
                         break;
                     default:
@@ -269,9 +311,17 @@ exports.toggleCommands = (type, option, id, commands) => {
                             'integer from 0 to 3 inclusive).'
                         );
                 }
-                resolve({ res_old: res_old, res: res });
+                if ([0, 1, 2].includes(option))
+                    resolve(res);
+                else
+                    resolve([disabledCommands, enabledCommands]);
             })
-        }).then(obj => {
+        }).then(res => {
+            if ([0, 1, 2].includes(option))
+                return updateTable(type, 'disabled_commands', res, id);
+            else
+                return formatTable(res[0], res[1]);
+        }).then(res => {
             return new Promise((resolve) => {
                 // Print all the variables to the user.
                 // This is just for testing purposes until I actually implement the
@@ -291,16 +341,23 @@ exports.toggleCommands = (type, option, id, commands) => {
                         option_inplainenglish = 'check';
                         break;
                     default:
-                        console.log('for fuck’s sake why is there an error here', option);
+                        console.log(
+                            'for fuck’s sake why is there an error here', option
+                        );
                 }
 
-                resolve(
-`**${type} id:** ${id}
+                var output_part1 = `**${type} id:** ${id}
 **option number:** ${option} (${option_inplainenglish})
-**commands passed by user:** ${util.inspect(commands)}
-**disabled_commands was:** ${obj.res_old}
-**disabled_commands is now:** ${obj.res}`
-                );
+**commands passed by user:** ${util.inspect(commands)}`;
+
+                if ([0, 1, 2].includes(option))
+                    var output_part2 = `**disabled_commands was:** ${res_old}
+**disabled_commands is now:** ${util.inspect(res)}`;
+                else
+                    var output_part2 = res;
+
+
+                resolve(output_part1 + '\n' + output_part2);
             });
         }).then(msg => {
             // This finally returns the message to the channelset or serverset
