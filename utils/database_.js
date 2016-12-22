@@ -205,9 +205,9 @@ function updateTable(type, column, value, id) {
     }); // return new Promise
 }
 
-// TODO: Support for returning channel and server at same time
-function formatTable(disabledCommands, enabledCommands) {
-    return `disabled commands: ${util.inspect(disabledCommands)}`;
+// TODO: Test if promise.then(function() { return genericFunctionName() }) works
+function formatTable(obj) {
+    return `**disabled commands**: ${util.inspect(obj)}`;
 }
 
 exports.toggleCommands = (type, option, id, commands) => {
@@ -233,95 +233,134 @@ exports.toggleCommands = (type, option, id, commands) => {
         // TODO: Add rows if they don’t exist
         //
         // Retrieve the disabled commands for this guild or channel
-        getRow(type, 'disabled_commands', id).then(res => {
-            return new Promise((resolve, reject) => {
-                // This is only for testing purposes and lets us compare the
-                // disabled_commands before and after. slice() clones the array
-                // so that the switch () statements below don’t inadvertently
-                // affect both arrays instead of just one.
-                //
-                // http://stackoverflow.com/a/7486130
-                res_old = res.slice();
+        if ([0, 1, 2].includes(option)) {
+            var toggleCommandsMain = getRow(type, 'disabled_commands', id).then(res => {
+                return new Promise((resolve, reject) => {
+                    // This is only for testing purposes and lets us compare
+                    // the disabled_commands before and after. slice() clones
+                    // the array so that the switch () statements below don’t
+                    // inadvertently affect both arrays instead of just one.
+                    //
+                    // http://stackoverflow.com/a/7486130
+                    res_old = res.slice();
 
-                // disabled_commands is empty, i.e. no disabled commands for
-                // this guild or channel
-                if (res === null) {
-                    res = [];
-                }
+                    // disabled_commands is empty, i.e. no disabled commands
+                    // for this guild or channel
+                    if (res === null) res = [];
 
-                switch (option) {
-                    case 0:
-                        // Enable command(s)
-                        for (let i = 0; i < commands.length; i++) {
-                            // If command is currently disabled, enable it
-                            if (res.includes(commands[i])) {
-                                res.splice(res.indexOf(commands[i]), 1);
-                            } else {
-                                console.log(`Command ${commands[i]} already enabled.`);
-                                // TODO: Alert the user in some way
+                    switch (option) {
+                        case 0:
+                            // Enable command(s)
+                            for (let i = 0; i < commands.length; i++) {
+                                // If command is currently disabled, enable it
+                                if (res.includes(commands[i])) {
+                                    res.splice(res.indexOf(commands[i]), 1);
+                                } else {
+                                    console.log(
+                                        `Command ${commands[i]} already ` +
+                                        'enabled.'
+                                    );
+                                    // TODO: Alert the user in some way
+                                }
                             }
-                        }
-                        break;
-                    case 1:
-                        // Disable command(s)
-                        for (let i = 0; i < commands.length; i++) {
-                            // If command is currently enabled, disable it
-                            if (! res.includes(commands[i])) {
-                                res.push(commands[i]);
-                            } else {
-                                console.log(`Command ${commands[i]} already disabled.`);
-                                // TODO: Alert the user in some way
+                            break;
+                        case 1:
+                            // Disable command(s)
+                            for (let i = 0; i < commands.length; i++) {
+                                // If command is currently enabled, disable it
+                                if (! res.includes(commands[i])) {
+                                    res.push(commands[i]);
+                                } else {
+                                    console.log(
+                                        `Command ${commands[i]} already ` +
+                                        'disabled.'
+                                    );
+                                    // TODO: Alert the user in some way
+                                }
                             }
-                        }
-                        break;
-                    case 2:
-                        // Toggle command(s)
-                        for (let i = 0; i < commands.length; i++) {
-                            // Command is disabled, so enable it
-                            if (res.includes(commands[i]))
-                                res.splice(res.indexOf(commands[i]), 1);
-                            // Command is enabled, so disable it
-                            else
-                                res.push(commands[i]);
-                        }
-                        break;
-                    case 3:
-                        // Check status of command(s)
-                        var enabledCommands = [];
-                        var disabledCommands = [];
-                        for (let i = 0; i < commands.length; i++) {
-                            // If command is currently disabled, insert into
-                            // the list of disabled commands
-                            if (res.includes(commands[i]))
-                                disabledCommands.push(commands[i]);
-                            // If command is currently enabled, insert into the
-                            // list of enabled commands
-                            else
-                                enabledCommands.push(commands[i]);
-                        }
-                        break;
-                    default:
-                        // TODO: Change to this format:
-                        // reject({
-                        //     log: [],
-                        //     message: ''
-                        // });
-                        reject(
-                            `${option} is not a valid option (expected ` +
-                            'integer from 0 to 3 inclusive).'
-                        );
-                }
-                if ([0, 1, 2].includes(option))
+                            break;
+                        case 2:
+                            // Toggle command(s)
+                            for (let i = 0; i < commands.length; i++) {
+                                // Command is disabled, so enable it
+                                if (res.includes(commands[i]))
+                                    res.splice(res.indexOf(commands[i]), 1);
+                                // Command is enabled, so disable it
+                                else
+                                    res.push(commands[i]);
+                            }
+                            break;
+                    }
                     resolve(res);
-                else
-                    resolve([disabledCommands, enabledCommands]);
-            })
-        }).then(res => {
-            if ([0, 1, 2].includes(option))
-                return updateTable(type, 'disabled_commands', res, id);
-            else
-                return formatTable(res[0], res[1]);
-        }).then(res => {
+                }).then(res => {
+                    return updateTable(type, 'disabled_commands', res, id);
+                });
+            }); // var toggleCommandsMain
+        } else if (option === 3) {
+            // ‘check’ option passed
+
+            // Commands passed by the user that have been categorised into
+            // either ‘disabled’ or ‘enabled’ from the channel settings
+            // (~channelset) and the guild/server settings (~serverset)
+            var checkedCommands = {
+                channel: {
+                    disabledCommands: [],
+                    enabledCommands: []
+                },
+                guild: {
+                    disabledCommands: [],
+                    enabledCommands: []
+                }
+            };
+
+            // Retrieve disabled commands for both channel and entire
+            // guild/server, respectively
+            var toggleCommandsMain = getRow('channel', 'disabled_commands', id).then(res => {
+                return new Promise((resolve) => {
+                    // Check status of command(s)
+                    for (let i = 0; i < commands.length; i++) {
+                        // If command is currently disabled, insert into
+                        // the list of disabled commands for the channel
+                        if (res.includes(commands[i]))
+                            checkedCommands.channel.disabledCommands.push(commands[i]);
+                        // If command is currently enabled, insert into the
+                        // list of enabled commands for the channel
+                        else
+                            checkedCommands.channel.enabledCommands.push(commands[i]);
+                    }
+                    resolve();
+                });
+            }).then(() => {
+                return getRow('guild', 'disabled_commands', id);
+            }).then(res => {
+                // Check status of command(s)
+                for (let i = 0; i < commands.length; i++) {
+                    // If command is currently disabled, insert into
+                    // the list of disabled commands for the guild
+                    if (res.includes(commands[i]))
+                        checkedCommands.guild.disabledCommands.push(commands[i]);
+                    // If command is currently enabled, insert into the
+                    // list of enabled commands for the guild
+                    else
+                        checkedCommands.guild.enabledCommands.push(commands[i]);
+                }
+                return true;
+            }).then(() => {
+                return formatTable(checkedCommands);
+            });
+        } else {
+            // TODO: Change to this format:
+            // reject({
+            //     log: [],
+            //     message: ''
+            // });
+            reject(
+                `${option} is not a valid option (expected ` +
+                'integer from 1 to 3 inclusive).'
+            );
+        }
+
+        toggleCommandsMain.then(res => {
             return new Promise((resolve) => {
                 // Print all the variables to the user.
                 // This is just for testing purposes until I actually implement the
@@ -369,8 +408,8 @@ exports.toggleCommands = (type, option, id, commands) => {
             //     log: ['function name', 'message'],
             //     message: '(optional and may not be supplied already)'
             // });
-            console.log(errorC('getRow:'), err);
-            reject('blehp');
+            console.log(errorC('toggleCommandsMain:'), err);
+            reject('toggleCommandsMain');
         });
 
     }); // return new Promise
