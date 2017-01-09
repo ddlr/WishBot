@@ -15,7 +15,7 @@ const https = require('https'),
       admins = require('./../../options/admins.json'),
       options = require('./../../options/options.json'),
       utils = require('./../../utils/utils.js'),
-      filter_default = 133664;
+      filterDefault = 133664;
 
 // Hardcode the first parameter (i.e. file from which fileLog was called) to
 // avoid repetition
@@ -57,9 +57,9 @@ function log(arr) {
 // command
 const filters = {
     default: {
-        include: filter_default
+        include: filterDefault
     }, rdd: {
-        include: filter_default,
+        include: filterDefault,
         tags: 'cute,-comic,raridash,artist:raridashdoodles'
     }, fourths: {
         aliasOf: 'fourhts'
@@ -94,7 +94,7 @@ function checkIfFilter(f, filter, authorID) {
             // This part still runs because JS is silly
             //
             // This sets the filter_id to the default, safe filter
-            filter_value = filter_default;
+            filter_value = filterDefault;
         }
     }
     // Derpibooru filter numbers (or IDs) must be positive integers
@@ -107,7 +107,7 @@ function checkIfFilter(f, filter, authorID) {
     ) {
         filter_value = parseInt(f[filter].include, 10);
     } else {
-        filter_value = filter_default;
+        filter_value = filterDefault;
     }
     return `&filter_id=${filter_value}`;
 }
@@ -519,8 +519,9 @@ function bacon(args, blehp, authorID) {
                         let imageSource = selection.id;
 
                         let description = '';
-                        if (filter !== filter_default)
-                            description += `**Filter:** ${filter}`;
+                        let filterUsed = checkIfFilter(filters, filter, authorID);
+                        if (filterUsed !== filterDefault)
+                            description += `**Filter:** ${filterUsed}`;
                         if (tags !== '') {
                             if (description !== '') description += '\n';
                             if (tags.length <= 120) {
