@@ -19,7 +19,7 @@
 
 const admins = require('./../../options/admins.json')
     , utils = require('./../../utils/utils.js')
-    , filter_default = 133664
+    , filterDefault = 133664
     , request_require = require('request')
     , request = request_require.defaults(
         { gzip: true
@@ -119,7 +119,7 @@ function bacon(args, blehp, authorID) {
             // Use-case #2, e.g. ~derpibooru_id 1063514
             // Lack of filters - just the image ID
             else {
-                filterId = filter_default;
+                filterId = filterDefault;
                 imageId = args;
                 log(['info', '', 'no filter ID specified']);
             }
@@ -329,6 +329,12 @@ function bacon(args, blehp, authorID) {
                                 tag => imageTags.includes(tag)
                             );
 
+                            let imageDescription =
+                                filterId === filterDefault
+                                    ? ''
+                                    : `**Filter used:** ${filterId} ` +
+                                      `- ${filterName}`;
+
                             // Message (or rather, embed) returned
                             //
                             // color is in format 0xFFFFFF, i.e. any integer
@@ -349,11 +355,7 @@ function bacon(args, blehp, authorID) {
                                   { title: 'Derpibooru page →'
                                   , url: 'https://derpibooru.org/' +
                                          imageSource
-                                  , description:
-                                        filterId === ''
-                                            ? ''
-                                            : `**Filter used:** ${filterId} ` +
-                                              `- ${filterName}`
+                                  , description: imageDescription
                                   , color: ((1 << 24) * Math.random() | 0)
                                   , image: { url: 'https:' + imageUrl }
                                   }
