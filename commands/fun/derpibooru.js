@@ -519,11 +519,11 @@ function bacon(args, blehp, authorID) {
                         let imageSource = selection.id;
 
                         let description = '';
-                        // Filter ID used. TODO: Make this way more elegant
+                        // Filter ID used. TODO: Make this way less hacky
                         let filterUsed =
-                            checkIfFilter(filters, filter, authorID).slice(11);
+                            parseInt(checkIfFilter(filters, filter, authorID).slice(11), 10);
                         if (filterUsed !== filterDefault)
-                            description += `**Filter:** ${filterUsed}`;
+                            description += `**Filter ID:** ${filterUsed}`;
                         if (tags !== '') {
                             if (description !== '') description += '\n';
                             if (tags.length <= 120) {
