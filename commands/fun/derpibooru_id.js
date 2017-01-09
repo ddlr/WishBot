@@ -572,7 +572,6 @@ aren’t art and/or aren’t safe for work. You can see a list of the tags \
 blocked here: <https://derpibooru.org/filters/133664>
 
 **Using a different filter:**
-
 If the current filter is too restrictive for you, you can use a different \
 one. This works the same way as on Derpibooru \
 (https://derpibooru.org/filters) and uses the filter ID. **Note that this \
