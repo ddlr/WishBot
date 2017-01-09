@@ -1,4 +1,5 @@
-var Database = require('./../../utils/database_.js');
+var Database = require('./../../utils/database_.js'),
+    util = require('util');
 
 module.exports = {
     usage:
@@ -45,11 +46,13 @@ A collection of examples:
             args = obj.args;
         return new Promise(resolve => {
             // Convert arguments to lowercase for easier use
-            // TODO: Keep in mind that you need to check whether or not option
-            //       and commands actually exist
-            var option, toggleCmds;
+            var option, cmdArgs;
 
-            // TODO: Wrap in promise
+            // ~channelset toggle ping clean derpibooru
+            // is converted to
+            //   option = toggle
+            //   args = ['ping', 'clean', 'derpibooru']
+
             if (args) {
                 option = args.toLowerCase().split(/ (.+)/)[0];
             } else {
@@ -63,7 +66,7 @@ A collection of examples:
             }
 
             if (args.toLowerCase().split(/ (.+)/)[1]) {
-                toggleCmds = args.toLowerCase().split(/ (.+)/)[1].split(' ');
+                cmdArgs = args.toLowerCase().split(/ (.+)/)[1].split(' ');
             } else {
                 console.log(
                     errorC('channelset:') +
@@ -74,7 +77,6 @@ A collection of examples:
                 });
             }
 
-            // TODO: Wrap in promise.then()
             switch (option) {
                 case 'enable':
                     option = 0;
@@ -102,52 +104,66 @@ A collection of examples:
                     });
             }
 
-            // Checks if command is an alias of another command
-            toggleCmds = toggleCmds.map(cmd => {
-                if (commandAliases.hasOwnProperty(cmd))
-                    return commandAliases[cmd];
-                else
-                    return cmd;
-            });
-
-            // Clone toggleCmds so I can remove elements from the array without
-            // fucking up the for loop
-            var toggleCmds_new = toggleCmds.slice();
-
-            // Do some checks before toggling commands
-            for (let i = 0; i < toggleCmds.length; i++) {
-                // Check if commands passed actually exist. If not, remove
-                // command from argument list.
-                if (! commands.hasOwnProperty(toggleCmds[i])) {
-                    // TODO: Add `Warning: ${toggleCmds[i]} doesn’t exist` to
-                    //       resolve() output
+            // all keyword passed, e.g. ~channelset enable all
+            // This only works with enable, disable, and check.
+            if (cmdArgs.includes('all')) {
+                if (! [0, 1, 3].includes(option)) {
                     console.log(
-                        warningC('channelset:') +
-                        ` ${toggleCmds[i]} doesn’t exist`
+                        errorC('channelset:') +
+                        ` ‘all’ cannot be used with ‘toggle’ option. ` +
+                        `(args: ${util.inspect(cmdArgs)})`
                     );
-                    toggleCmds_new.splice(
-                        toggleCmds_new.indexOf(toggleCmds[i]), 1
-                    );
+                    resolve({
+                        message:
+                            'Error: `all` can’t be used with `toggle` ' +
+                            'option. See `` `help channelset` for examples.'
+                    });
+
                 }
-                // Check if commands passed are togglable. If not, remove
-                // command from argument list.
-                //
-                // TODO: Move this to utils/database_.js, right after getRow(),
-                // and check whether this command is in disabled_commands. If
-                // so, enable and toggle will work, and disable won’t. If not,
-                // enable won’t do anything (tell user this), and toggle and
-                // disable won’t work.
-                else if (commands[toggleCmds[i]].togglable !== true) {
+                if (cmdArgs.length > 1) {
                     console.log(
-                        warningC('channelset:') +
-                        ` ${toggleCmds[i]} cannot be changed because it ` +
-                        'cannot be toggled'
+                        errorC('channelset:') +
+                        ' ‘all’ cannot be used in list ' +
+                        `(args: ${util.inspect(cmdArgs)})`
                     );
-                    toggleCmds_new.splice(
-                        toggleCmds_new.indexOf(toggleCmds[i]), 1
-                    );
-                    // TODO: Add `Warning: ${toggleCmds[i]} isn’t togglable` to
-                    //       resolve() output
+                    resolve({
+                        message:
+                            'Error: `all` can’t be used with other ' +
+                            'commands. See `` `help channelset` for examples.'
+                    });
+                }
+
+                // Alias cmdArgs_new to cmdArgs out of laziness to change
+                // Database.toggleCommands(), below
+                var cmdArgs_new = cmdArgs;
+            } else {
+                // Checks if command is an alias of another command
+                cmdArgs = cmdArgs.map(cmd => {
+                    if (commandAliases.hasOwnProperty(cmd))
+                        return commandAliases[cmd];
+                    else
+                        return cmd;
+                });
+
+                // Clone cmdArgs so I can remove elements from the array without
+                // fucking up the for loop
+                var cmdArgs_new = cmdArgs.slice();
+
+                // Do some checks before toggling commands
+                for (let i = 0; i < cmdArgs.length; i++) {
+                    // Check if commands passed actually exist. If not, remove
+                    // command from argument list.
+                    if (! commands.hasOwnProperty(cmdArgs[i])) {
+                        // TODO: Add `Warning: ${cmdArgs[i]} doesn’t exist` to
+                        //       resolve() output
+                        console.log(
+                            warningC('channelset:') +
+                            ` ${cmdArgs[i]} doesn’t exist`
+                        );
+                        cmdArgs_new.splice(
+                            cmdArgs_new.indexOf(cmdArgs[i]), 1
+                        );
+                    }
                 }
             }
 
@@ -158,7 +174,7 @@ A collection of examples:
             //
             // See utils/database_.js for more details
             Database.toggleCommands(
-                'channel', option, msg.channel.guild.id, toggleCmds_new
+                'channel', option, msg.channel.guild.id, cmdArgs_new
             ).then(response => {
                 // Doing above was successful - tell user so
                 resolve({

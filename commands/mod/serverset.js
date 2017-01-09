@@ -8,18 +8,26 @@ module.exports = {
 this command, here’s how it’s supposed to work:
 
 \`\`\`
+# Enable one/two/three command(s) for the current server
 ~serverset enable command-one command-two command-three
+# Enable all commands
+~serverset
+# Disable one/two/three command(s)
 ~serverset disable command-one command-two command-three
+# Toggle one/two/three command(s). If the command is enabled, disable it. If \
+the command is disabled, enable it. This is done on each command separately.
 ~serverset toggle command-one command-two command-three
+# Check whether or not the following commands are enabled.
 ~serverset check command-one command-two command-three
+
 \`\`\`
 
 Examples:
 \`\`\`
 ~serverset toggle derpibooru
-~serverset disable ping clean
+~serverset disable ping clean derpibooru
 ~serverset enable lenny whois
-~serverset check clean derpibooru
+~serverset check info
 \`\`\``
         ,
     aliases: ['sset'],

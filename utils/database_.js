@@ -39,10 +39,17 @@
 //       { "command1": true, "command2": true } (in JSON)
 //       { "command1" "command2" } (in database)
 
+// TODO: log() function at start of database_.js with option to resolve()
+//       immediately (for errors) or keep going (for warnings). Concatenate
+//       error messages to resolve() and send to user as a message on Discord.
+
 // guildTable and channelTable are the names of the table used in ~serverset
 // and ~guildset, respectively. Make sure they don’t have spaces.
 // In getRow(), the column to retrieve is checked against guildTable_cols or
 // channelTable_cols to check if it’s valid.
+//
+// maxCommandsPassed sets the maximum number of commands that can be passed at
+// once in the ~channelset and ~serverset commands.
 const util = require('util'),
       pg = require('pg'),
       options = require('./../options/options.json'),
@@ -57,7 +64,8 @@ const util = require('util'),
       channelTable = 'channel_settings',
       guildTable = 'guild_settings',
       channelTable_cols = ['id', 'disabled_commands'],
-      guildTable_cols = ['id', 'disabled_commands', 'settings'];
+      guildTable_cols = ['id', 'disabled_commands', 'settings'],
+      maxCommandsPassed = 5;
 
 var pool = new pg.Pool(config);
 
@@ -89,6 +97,8 @@ function tableNameAndCheckCol(type, column) {
 }
 
 function getRow(type, column, id) {
+    // TODO: Add row if it doesn’t exist
+
     // Arguments:
     // type   - name of table to change (guild or channel)
     // column - column to retrieve
@@ -210,9 +220,7 @@ function formatTable(obj) {
     return `**disabled commands**: ${util.inspect(obj)}`;
 }
 
-exports.toggleCommands = (type, option, id, commands) => {
-    // Holy mother of fuck is this a huge function compared to everything else
-    //
+exports.toggleCommands = (type, option, id, cmdArgs) => {
     // This function enables/disables/toggles/checks the status of commands for
     // either the channel or the entire guild (i.e. server).
     //
@@ -223,18 +231,33 @@ exports.toggleCommands = (type, option, id, commands) => {
     //            command(s)
     // id       - ID to toggle in database (either Discord channel ID or guild
     //            ID)
-    // commands - command(s) to enable/disable (array)
+    // cmdArgs  - command(s) to enable/disable (array) OR ‘all’ to
+    //            enable/disable all commands (the latter only works with
+    //            option 0 and 1)
 
-    // TODO: Limit commands to three elements
+    // TODO: 'all' instead of listing commands - this has already been added in
+    //       frontend
 
     var res_old;
 
     return new Promise((resolve, reject) => {
-        // TODO: Add rows if they don’t exist
-        //
+        // Check for too many commands passed at once
+        if (cmdArgs.length > maxCommandsPassed) {
+            console.log(
+                errorC('toggleCommands:') +
+                ` too many commands passed (${cmdArgs.length} passed, max ` +
+                `is ${maxCommandsPassed})`
+            );
+            reject(
+                `Error: too many commands passed (${cmdArgs.length} ` +
+                `passed, max is ${maxCommandsPassed})`
+            );
+        }
+
         // Retrieve the disabled commands for this guild or channel
         if ([0, 1, 2].includes(option)) {
-            var toggleCommandsMain = getRow(type, 'disabled_commands', id).then(res => {
+            var toggleCommandsMain = getRow(type, 'disabled_commands', id);
+            toggleCommandsMain.then(res => {
                 return new Promise((resolve, reject) => {
                     // This is only for testing purposes and lets us compare
                     // the disabled_commands before and after. slice() clones
@@ -251,13 +274,13 @@ exports.toggleCommands = (type, option, id, commands) => {
                     switch (option) {
                         case 0:
                             // Enable command(s)
-                            for (let i = 0; i < commands.length; i++) {
+                            for (let i = 0; i < cmdArgs.length; i++) {
                                 // If command is currently disabled, enable it
-                                if (res.includes(commands[i])) {
-                                    res.splice(res.indexOf(commands[i]), 1);
+                                if (res.includes(cmdArgs[i])) {
+                                    res.splice(res.indexOf(cmdArgs[i]), 1);
                                 } else {
                                     console.log(
-                                        `Command ${commands[i]} already ` +
+                                        `Command ${cmdArgs[i]} already ` +
                                         'enabled.'
                                     );
                                     // TODO: Alert the user in some way
@@ -266,13 +289,33 @@ exports.toggleCommands = (type, option, id, commands) => {
                             break;
                         case 1:
                             // Disable command(s)
-                            for (let i = 0; i < commands.length; i++) {
+                            for (let i = 0; i < cmdArgs.length; i++) {
+                                // Check if command is togglable, and if so,
+                                // don’t disable it
+                                //
+                                // Note that this if statement only runs when
+                                // disabling a command and when toggling a
+                                // command results in disabling it.
+                                //
+                                // This is to ensure that if a command was
+                                // previously togglable and now isn’t, the user
+                                // can still enable the command.
+                                if (commands[cmdArgs[i]].togglable !== true) {
+                                    console.log(
+                                        warningC('toggleCommandsMain.then: (disable)') +
+                                        ' Cannot disable command ' +
+                                        `${cmdArgs[i]} because it is not ` +
+                                        'togglable'
+                                    );
+                                    continue;
+                                }
+
                                 // If command is currently enabled, disable it
-                                if (! res.includes(commands[i])) {
-                                    res.push(commands[i]);
+                                if (! res.includes(cmdArgs[i])) {
+                                    res.push(cmdArgs[i]);
                                 } else {
                                     console.log(
-                                        `Command ${commands[i]} already ` +
+                                        `Command ${cmdArgs[i]} already ` +
                                         'disabled.'
                                     );
                                     // TODO: Alert the user in some way
@@ -281,21 +324,39 @@ exports.toggleCommands = (type, option, id, commands) => {
                             break;
                         case 2:
                             // Toggle command(s)
-                            for (let i = 0; i < commands.length; i++) {
+                            for (let i = 0; i < cmdArgs.length; i++) {
                                 // Command is disabled, so enable it
-                                if (res.includes(commands[i]))
-                                    res.splice(res.indexOf(commands[i]), 1);
+                                if (res.includes(cmdArgs[i])) {
+                                    res.splice(res.indexOf(cmdArgs[i]), 1);
+                                }
                                 // Command is enabled, so disable it
-                                else
-                                    res.push(commands[i]);
+                                else {
+                                    // Check if command is togglable, and if
+                                    // so, don’t disable it
+                                    if (commands[cmdArgs[i]].togglable !== true) {
+                                        console.log(
+                                            warningC('toggleCommandsMain.then (toggle):') +
+                                            ' Cannot disable command ' +
+                                            `${cmdArgs[i]} because it is not ` +
+                                            'togglable'
+                                        );
+                                        // TODO: add reject()
+                                    }
+
+                                    res.push(cmdArgs[i]);
+                                }
                             }
                             break;
                     }
                     resolve(res);
                 }).then(res => {
                     return updateTable(type, 'disabled_commands', res, id);
+                }).catch(res => {
+                    // TODO: Error handling
                 });
-            }); // var toggleCommandsMain
+            }).catch(err => {
+                // TODO: Error handling
+            });
         } else if (option === 3) {
             // ‘check’ option passed
 
@@ -315,18 +376,19 @@ exports.toggleCommands = (type, option, id, commands) => {
 
             // Retrieve disabled commands for both channel and entire
             // guild/server, respectively
-            var toggleCommandsMain = getRow('channel', 'disabled_commands', id).then(res => {
+            var toggleCommandsMain = getRow('channel', 'disabled_commands', id);
+            toggleCommandsMain.then(res => {
                 return new Promise((resolve) => {
                     // Check status of command(s)
-                    for (let i = 0; i < commands.length; i++) {
+                    for (let i = 0; i < cmdArgs.length; i++) {
                         // If command is currently disabled, insert into
                         // the list of disabled commands for the channel
-                        if (res.includes(commands[i]))
-                            checkedCommands.channel.disabledCommands.push(commands[i]);
+                        if (res.includes(cmdArgs[i]))
+                            checkedCommands.channel.disabledCommands.push(cmdArgs[i]);
                         // If command is currently enabled, insert into the
                         // list of enabled commands for the channel
                         else
-                            checkedCommands.channel.enabledCommands.push(commands[i]);
+                            checkedCommands.channel.enabledCommands.push(cmdArgs[i]);
                     }
                     resolve();
                 });
@@ -334,19 +396,21 @@ exports.toggleCommands = (type, option, id, commands) => {
                 return getRow('guild', 'disabled_commands', id);
             }).then(res => {
                 // Check status of command(s)
-                for (let i = 0; i < commands.length; i++) {
+                for (let i = 0; i < cmdArgs.length; i++) {
                     // If command is currently disabled, insert into
                     // the list of disabled commands for the guild
-                    if (res.includes(commands[i]))
-                        checkedCommands.guild.disabledCommands.push(commands[i]);
+                    if (res.includes(cmdArgs[i]))
+                        checkedCommands.guild.disabledCommands.push(cmdArgs[i]);
                     // If command is currently enabled, insert into the
                     // list of enabled commands for the guild
                     else
-                        checkedCommands.guild.enabledCommands.push(commands[i]);
+                        checkedCommands.guild.enabledCommands.push(cmdArgs[i]);
                 }
                 return true;
             }).then(() => {
                 return formatTable(checkedCommands);
+            }).catch(res => {
+                // TODO: Error handling
             });
         } else {
             // TODO: Change to this format:
@@ -387,7 +451,7 @@ exports.toggleCommands = (type, option, id, commands) => {
 
                 var output_part1 = `**${type} id:** ${id}
 **option number:** ${option} (${option_inplainenglish})
-**commands passed by user:** ${util.inspect(commands)}`;
+**commands passed by user:** ${util.inspect(cmdArgs)}`;
 
                 if ([0, 1, 2].includes(option))
                     var output_part2 = `**disabled_commands was:** ${res_old}

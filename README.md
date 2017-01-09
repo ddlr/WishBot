@@ -13,15 +13,19 @@ Google makes for a very helpful friend.
 Rename all the files that end in `-blank` and modify them accordingly. This is
 important for the bot to be able to be run.
 
-When you’ve set up the database, run `~initdb` while the bot’s running to set
-up the tables in the database.
-
 Once you’ve done all that, consider using something like `forever` to run the
-bot.
+bot. Something like this:
 
 ```shell
 sudo npm install forever -g
 forever --minUptime 10000 --spinSleepTime 5000 index.js
+```
+
+If you’re planning on developing on the source code, consider installing
+eslint:
+
+```shell
+sudo npm install eslint -g
 ```
 
 ### How the command system works:

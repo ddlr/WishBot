@@ -25,10 +25,18 @@ exports.load = function() {
                                     let commandName = name.replace(/\.js$/, '');
                                     if (commandName.includes(' ')) {
                                         console.log(
-                                            errorC(
-                                                `${name} did not load - ` +
-                                                'contains spaces.'
-                                            )
+                                            errorC('commandLoader:') +
+                                            ` ${name} did not load - ` +
+                                            'contains spaces.'
+                                        );
+                                        continue;
+                                    } else if (commandName === 'all') {
+                                        console.log(
+                                            errorC('commandLoader:') +
+                                            ` ${name} did not load - ‘all’ ` +
+                                            'is a reserved keyword in ' +
+                                            'channelset and serverset ' +
+                                            'commands.'
                                         );
                                         continue;
                                     }
