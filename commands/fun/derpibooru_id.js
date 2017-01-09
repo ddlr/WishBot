@@ -565,8 +565,8 @@ function bacon(args, blehp, authorID) {
 
 module.exports = {
     usage:
-`Returns an image from **Derpibooru** via an **image’s ID**. Compare this to the \`derpibooru\` command, which returns an image based on tags.
-
+`Returns an image from **Derpibooru** via an **image’s ID**. Compare this to \
+the \`derpibooru\` command, which returns an image based on tags. \
 Note that this command uses a custom filter that doesn’t show images that \
 aren’t art and/or aren’t safe for work. You can see a list of the tags \
 blocked here: <https://derpibooru.org/filters/133664>
@@ -575,9 +575,9 @@ blocked here: <https://derpibooru.org/filters/133664>
 
 If the current filter is too restrictive for you, you can use a different \
 one. This works the same way as on Derpibooru \
-(https://derpibooru.org/filters) and uses the filter ID.
-
-Note that due to the API that this bot uses, only hidden tags will have any \
+(https://derpibooru.org/filters) and uses the filter ID. Note that this \
+feature will only work for bot admins for the time being. Also note that due \
+to the Derpibooru API that this bot uses, only hidden tags will have any \
 effect — spoilered tags will still show as normal.
 
 **Usage:**
