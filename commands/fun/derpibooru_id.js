@@ -575,9 +575,9 @@ blocked here: <https://derpibooru.org/filters/133664>
 
 If the current filter is too restrictive for you, you can use a different \
 one. This works the same way as on Derpibooru \
-(https://derpibooru.org/filters) and uses the filter ID. Note that this \
-feature will only work for bot admins for the time being. Also note that due \
-to the Derpibooru API that this bot uses, only hidden tags will have any \
+(https://derpibooru.org/filters) and uses the filter ID. **Note that this \
+feature will only work for bot admins for the time being.** Also note that \
+due to the Derpibooru API that this bot uses, only hidden tags will have any \
 effect — spoilered tags will still show as normal.
 
 **Usage:**
