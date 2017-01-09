@@ -89,24 +89,28 @@ exports.fileLog = arr => {
     //   arr[4]: Error stack (optional)
     var a, b, c, d;
 
-    a = arr[0] ? arr[0] : 'unknown file';
-
-    c = arr[2] ? arr[2] : 'unknown function';
-    d = arr[3] ? arr[3] : 'unknown error';
-
-    // Looks like
-    //   aRandomFile - (erroringFunction) error message here
-    //   [error stack]
-    if (! loggingLevels.levels.hasOwnProperty(arr[1])) {
-        // Default to warning if logging level not specified
-        b = 'warn';
+    if (arr[0] instanceof Error) {
+        fileLog.log('error', arr[0]);
     } else {
-        b = arr[1];
+        a = arr[0] ? arr[0] : 'unknown file';
+
+        c = arr[2] ? arr[2] : 'unknown function';
+        d = arr[3] ? arr[3] : 'unknown error';
+
+        // Looks like
+        //   aRandomFile - (erroringFunction) error message here
+        //   [error stack]
+        if (! loggingLevels.levels.hasOwnProperty(arr[1])) {
+            // Default to warning if logging level not specified
+            b = 'warn';
+        } else {
+            b = arr[1];
+        }
+        // If there’s an error stack, print that instead
+        fileLog.log(b, `${a} - (${c}) ${d}`);
+        if (arr[4])
+            fileLog.log('error', arr[4]);
     }
-    // If there’s an error stack, print that instead
-    fileLog.log(b, `${a} - (${c}) ${d}`);
-    if (arr[4])
-        fileLog.log('error', arr[4]);
 }
 
 //Try to get a user object from a typed name
