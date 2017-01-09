@@ -20,12 +20,12 @@ const options = require('./../options/options.json')
               { filename: 'error.log' // The name of the logging file
               , prettyPrint: true
               , json: false
-              , level: 'debug' // TODO: Change this and winston.transports.Console to warn when pushing to prod
+              , level: 'info' // TODO: Change this and winston.transports.Console to warn when pushing to prod
               , colorize: true // Add COLOURS
               }
             )
           , new (winston.transports.Console)(
-              { level: 'debug' // Minimum error level in order to print
+              { level: 'info' // Minimum error level in order to print
               , colorize: true
               }
             )
