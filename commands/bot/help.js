@@ -3,7 +3,7 @@ var utils = require('./../../utils/utils.js'),
 
 module.exports = {
     aliases: ['commands'],
-    needsPrefix: false,
+    needsPrefix: true,
     process: obj => {
         var msg = obj.msg,
             args = obj.args,
