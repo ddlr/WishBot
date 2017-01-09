@@ -1,15 +1,40 @@
-const winston = require('winston'), //Used for logging to file
-    fileLog = new(winston.Logger)({ //Creates log transport to log to error.log file
-        transports: [
-            new(winston.transports.File)({
-                filename: 'error.log', //The name of the logging file
-                showLevel: false,
-                prettyPrint: true,
-                json: false
-            })
-        ]
-    }),
-    fs = require('fs');
+const options = require('./../options/options.json')
+  , winston = require('winston') // Used for logging to file
+  , loggingLevels = // Used by Winston and in turn utils.fileLog
+      { levels:
+          { error: 0
+          , warn: 1
+          , info: 2
+          , debug: 3
+          }
+      , colors:
+          { error: 'red'
+          , warn: 'orange'
+          , info: 'green'
+          , debug: 'blue'
+          }
+      }
+  , fileLog = new(winston.Logger)( // Creates log transport to log to error.log file
+      { transports:
+          [ new (winston.transports.File)( // Log file
+              { filename: 'error.log' // The name of the logging file
+              , prettyPrint: true
+              , json: false
+              , level: 'debug' // TODO: Change this and winston.transports.Console to warn when pushing to prod
+              , colorize: true // Add COLOURS
+              }
+            )
+          , new (winston.transports.Console)(
+              { level: 'debug' // Minimum error level in order to print
+              , colorize: true
+              }
+            )
+          ]
+      , levels: loggingLevels.levels
+      , colors: loggingLevels.colors
+      }
+    )
+  , fs = require('fs');
 
 //Covert string to having just first character uppercase and the rest lowercase
 exports.toTitleCase = str => {
@@ -56,10 +81,32 @@ exports.splitArray = (array, size) => {
     return sets;
 }
 
-//Logs errors to the cconsole as well as the error.log
-exports.fileLog = err => {
-    console.log(errorC(err))
-    fileLog.error(err)
+exports.fileLog = arr => {
+    // a arr[0]: file from which log was called
+    // b arr[1]: error level (see loggingLevels constant at top of this file)
+    // c arr[2]: The function from which log was originally called
+    // d arr[3]: Log message
+    //   arr[4]: Error stack (optional)
+    var a, b, c, d;
+
+    a = arr[0] ? arr[0] : 'unknown file';
+
+    c = arr[2] ? arr[2] : 'unknown function';
+    d = arr[3] ? arr[3] : 'unknown error';
+
+    // Looks like
+    //   aRandomFile - (erroringFunction) error message here
+    //   [error stack]
+    if (! loggingLevels.levels.hasOwnProperty(arr[1])) {
+        // Default to warning if logging level not specified
+        b = 'warn';
+    } else {
+        b = arr[1];
+    }
+    // If there’s an error stack, print that instead
+    fileLog.log(b, `${a} - (${c}) ${d}`);
+    if (arr[4])
+        fileLog.log('error', arr[4]);
 }
 
 //Try to get a user object from a typed name

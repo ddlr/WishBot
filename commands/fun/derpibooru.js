@@ -1,6 +1,3 @@
-// Made by Chryssi
-// 22 Nov 2016 -- 13 Dec 2016
-//
 // TODO: add a maximum limit to args length
 //
 // TODO: Make selecting own filter a toggleable option
@@ -8,44 +5,26 @@
 // TODO: Move database to PostgreSQL and put filters in there
 //
 // TODO: Make reject() (i.e. log()) function names more sensible
+//
+// TODO: Change filters to tag aliases
 
 'use strict';
 
 const https = require('https'),
       qs = require('querystring'),
       admins = require('./../../options/admins.json'),
-      options = require('./../../options/options.json');
+      options = require('./../../options/options.json'),
+      utils = require('./../../utils/utils.js'),
+      filter_default = 133664;
 
+// Hardcode the first parameter (i.e. file from which fileLog was called) to
+// avoid repetition
 function log(arr) {
-    // arr[0]: 'misc', 'warn', or 'error' (colour of text)
-    // arr[1]: The function from which log was originally called
-    // arr[2]: Log message
-    var a, b, c;
-
-    if (arr[0] === 'misc')
-        a = miscC('derpibooru:'); // Debug messages
-    else if (arr[0] === 'warn')
-        a = warningC('derpibooru:'); // Warnings
-    else if (arr[0] === 'error')
-        a = errorC('derpibooru:'); // Errors
-    else {
-        console.log(
-            warningC('derpibooru:') +
-            ' (log) - invalid first argument in line marked *'
-        );
-        a = warningC('*derpibooru:');
-    }
-
-    b = arr[1] ? `(${arr[1]}) ` : '';
-    c = arr[2] ? arr[2] : '';
-
-    // If verbose_logging is set to false or is undefined, don't print
-    // info/debug messages
-    if (a && (options.verbose_logging || arr[0] !== 'misc'))
-        console.log(`${a} - ${b}${c}`);
+    arr.unshift('derpibooru');
+    return utils.fileLog(arr);
 }
 
-// Custom filters.
+// Tag aliases (previously “custom filters”)
 //
 // `include` is the Derpibooru filter this filter includes. This is
 // passed along to Derpibooru as the `filter_id` parameter. The
@@ -60,19 +39,17 @@ function log(arr) {
 // https://derpibooru.org/filters/133664
 //
 // or below - hides the below filters:
-// 1000 hours in ms paint, anthro, aryan pony,
-// background pony strikes again, base, bean pony, blood,
-// content-aware scale, deviantart stamp, diamond dog,
-// disembodied hands, drama, explicit, explicit source,
-// exploitable meme, fat, fluffy pony, fluffy pony grimdark,
-// foalcon, forced meme, g1 to g3.5, greentext, grimdark,
-// grotesque, header, human, image macro, impossibly large ass,
-// impossibly large everything, inflation, luftwaffe,
-// male pregnancy, morbidly obese, nazi, nostril flare,
+// 1000 hours in ms paint, aryan pony, background pony strikes again,
+// barely pony related, base, blood, content-aware scale, deviantart stamp,
+// diamond dog, disembodied hands, drama, explicit, explicit source,
+// exploitable meme, fat, fluffy pony, fluffy pony grimdark, foalcon,
+// forced meme, g1 to g3.5, greentext, grimdark, grotesque, header,
+// image macro, impossibly large ass, impossibly large everything, inflation,
+// luftwaffe, male pregnancy, morbidly obese, nazi, nostril flare,
 // not pony related, obese, obligatory pony, oc:anon, oc:aryanne,
-// oc:kyrie, op is a duck, pony creator, pregnant, questionable,
-// seizure warning, semi-grimdark, sneezing fetish, suggestive,
-// text only, youtube caption, youtube, rule 34
+// oc:kyrie, op is a duck, pony creator, pregnant, questionable, rule 34,
+// seizure warning, semi-grimdark, suggestive, text only, youtube,
+// youtube caption
 //
 // `rdd`, `fourhts`, and `fourths` is for fourhts. You’re welcome.
 //
@@ -80,9 +57,9 @@ function log(arr) {
 // command
 const filters = {
     default: {
-        include: 133664
+        include: filter_default
     }, rdd: {
-        include: 133664,
+        include: filter_default,
         tags: 'cute,-comic,raridash,artist:raridashdoodles'
     }, fourths: {
         aliasOf: 'fourhts'
@@ -97,7 +74,7 @@ const filters = {
 function escapeTags(tags) {
     // Wildcard * when no tags is because query to Derpibooru
     // cannot be blank (otherwise empty string returned by server)
-    log(['misc', 'escapeTags', `escaped tags: ${qs.escape(tags)}`]);
+    log(['debug', 'escapeTags', `escaped tags: ${qs.escape(tags)}`]);
     return (qs.escape(tags) && tags) ? qs.escape(tags) : '*';
 }
 
@@ -105,18 +82,19 @@ function escapeTags(tags) {
 // Derpibooru filter as well. If so, return the &filter_id param,
 // which is used in the path of the Derpibooru requests.
 function checkIfFilter(f, filter, authorID) {
-    let include;
+    let filter_value,
+        filter_int = parseInt(filter, 10);
     // TODO: Add support for aliasOf
-    if (Number.isInteger(parseInt(filter)) && parseInt(filter) > 0) {
+    if (Number.isInteger(filter_int) && filter_int > 0) {
         // Check if user is admin
         // TODO: Make this available to mods as well, and make it toggleable
-        if (admins.indexOf(authorID) > -1) include = parseInt(filter);
+        if (admins.indexOf(authorID) > -1) filter_value = filter_int;
         else {
             // If user does not have permission to use `[custom filter]
             // This part still runs because JS is silly
             //
             // This sets the filter_id to the default, safe filter
-            include = 133664;
+            filter_value = filter_default;
         }
     }
     // Derpibooru filter numbers (or IDs) must be positive integers
@@ -127,11 +105,11 @@ function checkIfFilter(f, filter, authorID) {
         Number.isInteger(f[filter].include) &&
         f[filter].include > 0
     ) {
-        include = parseInt(f[filter].include);
+        filter_value = parseInt(f[filter].include, 10);
     } else {
-        include = 133664;
+        filter_value = filter_default;
     }
-    return `&filter_id=${include}`;
+    return `&filter_id=${filter_value}`;
 }
 
 // Main function
@@ -143,12 +121,12 @@ function bacon(args, blehp, authorID) {
 
         // Set tags that will be used in search
         if (args) {
-            // Use-case #1, e.g. derpibooru `fourths or derpibooru `133664
+            // Use-case #1, e.g. ~derpibooru `fourths or ~derpibooru `133664
             // With custom filters
 
             if (args.charAt(0) === '`') {
                 let filterTags;
-                log(['misc', 'command - ', JSON.stringify(args.split(/ (.+)/))]);
+                log(['debug', 'command - ', JSON.stringify(args.split(/ (.+)/))]);
 
                 // first word is the name of the filter (e.g. `raridash)
                 // the backtick is removed before the first word is
@@ -158,7 +136,11 @@ function bacon(args, blehp, authorID) {
                 // second word onwards is list of tags
                 let customTags = args.split(/ (.+)/)[1];
 
-                if (Number.isInteger(parseInt(filter)) && parseInt(filter) > 0) {
+                // filter_int is the image ID as an integer
+                let filter_int = parseInt(filter, 10);
+                if (Number.isInteger(filter_int) &&
+                    filter_int > 0 &&
+                    filter_int < 999999) {
                     // Check if user is admin
                     // TODO: Make this available to mods as well, and make it
                     // toggleable (also see the checkIfFilter function)
@@ -251,7 +233,7 @@ function bacon(args, blehp, authorID) {
                         message: `filter ${filter} doesn’t exist!`
                     });
                 }
-                log(['misc', 'filterTags', filterTags]);
+                log(['debug', 'filterTags', filterTags]);
 
                 // Set tags based on if filter tags exist (in the
                 // form of filters[name of filter].tags) and if there are
@@ -267,7 +249,7 @@ function bacon(args, blehp, authorID) {
                 if (filterTags && customTags) {
                     // Both filterTags and customTags exist
                     log([
-                        'misc',
+                        'info',
                         '',
                         'tags specified by both filter and custom tags'
                     ]);
@@ -275,7 +257,7 @@ function bacon(args, blehp, authorID) {
                 } else if (filterTags && (! customTags)) {
                     // Only filterTags exist
                     log([
-                        'misc',
+                        'info',
                         '',
                         'tags specified by filter; no custom tags specified'
                     ]);
@@ -302,7 +284,7 @@ function bacon(args, blehp, authorID) {
                     tags = '';
                 }
             }
-            // Use-case #2, e.g. derpibooru rarity
+            // Use-case #2, e.g. ~derpibooru rarity
             // Lack of custom filters - just tags
             else {
                 filter = 'default';
@@ -310,13 +292,13 @@ function bacon(args, blehp, authorID) {
                   filters[filter].tags
                     ? filters[filter].tags + ',' + args
                     : args;
-                log(['misc', '', 'no custom filters specified (just tags)']);
+                log(['debug', '', 'no custom filters specified (just tags)']);
             }
 
-            log(['misc', '', `using filter ${filter}; using tags ${tags}`]);
-            log(['misc', '', `Arguments used are ${args}`]);
+            log(['debug', '', `using filter ${filter}; using tags ${tags}`]);
+            log(['debug', '', `Arguments used are ${args}`]);
         } else {
-            log(['misc', 'derpibooru', 'No arguments passed']);
+            log(['debug', 'derpibooru', 'No arguments passed']);
 
             // Use case #1, e.g. derpibooru
             // Just the command by itself
@@ -336,7 +318,7 @@ function bacon(args, blehp, authorID) {
         return new Promise((resolve, reject) => {
 
             log([
-                'misc',
+                'debug',
                 '',
                 'Connecting to Derpibooru using this URL (1st time):\n' +
                 `/search.json?q=${escapeTags(tags)}&page=1` +
@@ -388,7 +370,7 @@ function bacon(args, blehp, authorID) {
                         message:
                             'Derpibooru’s API didn’t return JSON. ' +
                             'Perhaps the API is offline or has moved? ' +
-                            'Please let Chryssi know.',
+                            'Please let Chrys know.',
                         request: res
                     });
                 }
@@ -396,19 +378,19 @@ function bacon(args, blehp, authorID) {
                 res.setEncoding('utf8');
                 let raw = '';
 
-                res.on('data', (chunk) => raw += chunk);
+                res.on('data', chunk => raw += chunk);
                 res.on('end', () => {
                     try {
                         // Parsed JSON response
-                        let response = JSON.parse(raw);
+                        let res_parsed = JSON.parse(raw);
                         log([
-                            'misc',
+                            'debug',
                             'getTotalNo',
-                            `total no. of results - ${response.total}`
+                            `total no. of results - ${res_parsed.total}`
                         ]);
                         // No. of results
                         resolve({
-                            total: response.total,
+                            total: res_parsed.total,
                             filter: filter,
                             tags: tags
                         });
@@ -434,7 +416,7 @@ function bacon(args, blehp, authorID) {
                         reject({
                             log: ['getTotalNo', e.message],
                             message: 'Sorry, something went wrong with ' +
-                              'connecting to Derpibooru. Please let Chryssi ' +
+                              'connecting to Derpibooru. Please let Chrys ' +
                               'know.'
                         });
                         res.abort();
@@ -461,7 +443,7 @@ function bacon(args, blehp, authorID) {
                         `(got ${resultsTotal})`
                     ],
                     message: 'Sorry, Derpibooru returned something weird that' +
-                      'I couldn’t handle. Please let Chryssi know.'
+                      'I couldn’t handle. Please let Chrys know.'
                 });
             }
             let pagesTotal = Math.ceil(resultsTotal / 15);
@@ -469,7 +451,7 @@ function bacon(args, blehp, authorID) {
             let page = Math.ceil(Math.random() * pagesTotal);
 
             log([
-                'misc',
+                'debug',
                 'getTotalNo.then',
                 'Connecting to Derpibooru using this URL (2nd time):\n' +
                 `/search.json?q=${escapeTags(tags)}&page=${page}` +
@@ -485,8 +467,8 @@ function bacon(args, blehp, authorID) {
             };
 
             // The asynchronous request that retrieves an image
-            let req = https.get(options, (res) => {
-                let error;
+            // TODO: Change to request()
+            let req = https.get(options, res => {
                 let contentType = res.headers['content-type'];
 
                 // Error: Invalid status code
@@ -507,7 +489,7 @@ function bacon(args, blehp, authorID) {
                             'https.get',
                             `Received ${res.contentType} instead of JSON.`
                         ],
-                        message: `Derpibooru returned something weird.`,
+                        message: `Derpibooru API returned something weird.`,
                         request: res
                     });
                 }
@@ -519,21 +501,35 @@ function bacon(args, blehp, authorID) {
                 res.on('end', () => {
                     try {
                         // Parsed JSON response
-                        let response = JSON.parse(raw);
+                        let res_parsed = JSON.parse(raw);
+
                         // No of results on this page (e.g. in case there’s
                         // only two or three results instead of the default
                         // fifteen on a full page)
-                        let pageResultsNo = response.search.length;
+                        let pageResultsNo = res_parsed.search.length;
 
                         // Parse retrieved JSON and select one image
                         let pageIndex =
                           Math.floor(Math.random() * pageResultsNo);
                         // Randomly selected image
-                        let selection = response.search[pageIndex];
+                        let selection = res_parsed.search[pageIndex];
                         // Image URL
-                        let image = selection.representations.large;
+                        let imageUrl = selection.representations.large;
                         // Image source
-                        let source = selection.id;
+                        let imageSource = selection.id;
+
+                        let description = '';
+                        if (filter !== filter_default)
+                            description += `**Filter:** ${filter}`;
+                        if (tags !== '') {
+                            if (description !== '') description += '\n';
+                            if (tags.length <= 120) {
+                                description += `**Tags:** ${tags}`;
+                            } else {
+                                description +=
+                                    `**Tags:** *(too long to list)*`;
+                            }
+                        }
 
                         // Message (or rather, embed) returned
                         //
@@ -552,17 +548,11 @@ function bacon(args, blehp, authorID) {
                         let result = {
                             embed: {
                                 title: 'Derpibooru page →',
-                                url: 'https://derpibooru.org/' + source,
-                                description:
-                                    tags === ''
-                                        ? ''
-                                        : tags.length <= 120
-                                            ? `**Tags:** ${tags}`
-                                            : '**Tags:** *(too long to list)*'
-                                        ,
+                                url: 'https://derpibooru.org/' + imageSource,
+                                description: description,
                                 color: ((1 << 24) * Math.random() | 0),
                                 image: {
-                                    url: 'https:' + image
+                                    url: 'https:' + imageUrl
                                 }
                             }
                         };
@@ -573,7 +563,7 @@ function bacon(args, blehp, authorID) {
                         // are no results (thus JSON cannot be parsed).
                         reject({
                             log: ['getTotalNo.then', e.message],
-                            message: 'Derpibooru didn’t return any results.',
+                            message: 'Derpibooru didn’t return any results.'
                         });
                     }
                 }); // res.on('end' ... )
@@ -602,7 +592,7 @@ function bacon(args, blehp, authorID) {
         blehp(message);
     }).catch(err => {
         // If catch() caught an Error object, return error.message
-        if (err instanceof Error) blehp('Error: ' + reason.message);
+        if (err instanceof Error) blehp('**Error:** ' + err.message);
         // If error was the result of a promise reject()
         else if (typeof err === 'object') {
             // err.log[0]: Function from which this function was called
@@ -613,18 +603,18 @@ function bacon(args, blehp, authorID) {
 
             // Nom on the response data to free up memory
             if (err.request !== undefined) err.request.resume();
-            var resolveMessage = 'Error:\n' + err.message;
+            var resolveMessage = '**Error:**\n' + err.message;
             // blehp() is the equivalent of the resolve() function in promises
             // i.e. blehp() is what helps output resolveMessage to Discord
             blehp(resolveMessage);
         }
-        else if (typeof err === 'string') blehp(reason);
+        else if (typeof err === 'string') blehp(err);
         else {
             // This really shouldn’t happen
             console.log(errorC('derpibooru:'), err);
             blehp(
-                'Some weird error occurred. This is a bug in the command; ' +
-                'Please let the developer know.'
+                '**Error:** Something really weird happened. This is a bug ' +
+                'in the command; please let the developer know.'
             );
         }
     }); // getTotalNo.catch()
@@ -633,45 +623,38 @@ function bacon(args, blehp, authorID) {
 
 module.exports = {
     usage:
-`Returns a **randomly-selected image from Derpibooru**, with the ability to \
-filter by using search queries and predefined “filters”. This version of the \
-command allows for custom Derpibooru filters and filtering by search queries. \
-Inspired by fourhts’ Cute Horses. (http://wikipedia.sexy/hoers)
-
-Note that this command uses a filter to not show anything that isn’t art \
-and/or isn’t SFW. You can see a list of the tags blocked here: \
+`Returns an image from **Derpibooru**, filtered by **tags**. If \
+there is more than one result, the image returned will be randomly selected. \
+Note that this command uses a custom filter that doesn’t show images that aren’t art \
+and/or aren’t safe for work. You can see a list of the tags blocked here: \
 <https://derpibooru.org/filters/133664>
+
+Inspired by fourhts’ Cute Horses. (http://wikipedia.sexy/hoers)
 
 **Usage:**
 \`\`\`markdown
-# Return random image from Derpibooru
+# Return any image from Derpibooru
 ~dp
-# Use a predefined filter (fourths, raridash, fourhts) by using a backtick \
-(\`):
-~dp \`fourths
 # Return random image with the following tags (in the same format as you \
 would in Derpibooru’s search box):
 ~dp changeling OR raripie
-# Why not both
-~dp \`fourths AND artist:raridashdoodles
-## which is equivalent to (notice the space)
-~dp \`fourths , artist:raridashdoodles
-# Search for images that match the tags in the fourths filter OR (changeling \
-and cute)
-~dp \`fourths OR (changeling, cute)
 \`\`\`
 
-**List of “filters”:**
-\`\`\`markdown
-# \`rdd is identical to:
-cute, -comic, raridash, artist:raridashdoodles
-# \`fourths or \`fourhts is identical to:
-(raridash OR sciset OR taviscratch OR raripie OR appleshy OR hoodies OR \
-twinkie OR rarilight OR thoraxspike) AND cute AND NOT comic
+**Advanced usage for the 0.84% that care - tag aliases:**
 
-Or alternatively, use a Derpibooru filter in the format \`filter, e.g. \
-\`133664 for the filter at https://derpibooru.org/filters/133664. This is \
-admin-only at the moment.
+As well as search queries, you can use one of the predefined tag aliases, \
+which are aliases for a collection of tags
+backtick in front of their name.
+
+**List of tag aliases:**
+\`\`\`markdown
+# ~dp \`rdd
+# is identical to:
+~dp cute, -comic, raridash, artist:raridashdoodles
+# ~dp \`fourths or ~dp \`fourhts
+# is identical to:
+~dp (raridash OR sciset OR taviscratch OR raripie OR appleshy OR hoodies OR \
+twinkie OR rarilight OR thoraxspike) AND cute AND NOT comic
 \`\`\``
         ,
     aliases: ['dp', 'dpc'],
@@ -696,7 +679,7 @@ admin-only at the moment.
                         (message) => {
                             output = message;
                             log([
-                                'misc',
+                                'debug',
                                 '',
                                 'resolving message: ' + JSON.stringify(message)
                             ]);
@@ -706,7 +689,7 @@ admin-only at the moment.
                     );
                 }).then(message => {
                     log([
-                        'misc',
+                        'debug',
                         '',
                         'returning output of derpibooru: ' +
                         JSON.stringify(message)
