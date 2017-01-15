@@ -82,7 +82,7 @@ function getFilterAndId(obj) {
                             }
                         );
                     } else {
-                        log(['debug', '', `using filter ID ${filterId}`]);
+                        log(['info', '', `using filter ID ${filterId}`]);
                     }
                 }
                 // Filter ID is not valid, so return error to user
@@ -106,7 +106,7 @@ function getFilterAndId(obj) {
             else {
                 filterId = filterDefault;
                 imageId = args;
-                log(['info', '', 'no filter ID specified']);
+                log(['debug', '', 'no filter ID specified']);
             }
 
             // Check if image ID is valid
@@ -461,8 +461,6 @@ function parseImage(obj) {
     });
 }
 
-
-
 // This filter is used by default:
 // https://derpibooru.org/filters/133664
 //
@@ -478,57 +476,6 @@ function parseImage(obj) {
 // oc:kyrie, op is a duck, pony creator, pregnant, questionable, rule 34,
 // seizure warning, semi-grimdark, suggestive, text only, youtube,
 // youtube caption
-
-// Main function
-function bacon(args, blehp, authorId) {
-    getFilterAndId({ args: args, authorId: authorId }).then(
-        obj => fetchFilter(obj)
-    ).then(
-        obj => fetchImage(obj)
-    ).then(
-        obj => parseImage(obj)
-    ).then(function (message) {
-        // Success! Return message (or in this case, embed)
-        blehp(message);
-    }).catch(err => {
-        // If catch() caught an Error object, return error.message
-        if (err instanceof Error) blehp('**Error:** ' + err.message);
-        // If error was the result of a promise reject()
-        else if (typeof err === 'object') {
-            // If err in reject(err) was an object:
-            //     err.log[0]:  Function from which this function was called
-            //     err.log[1]:  Log message
-            //     err.message: Message to return to user running Discord
-            //                  command
-            //     err.request: request callback, for stopping the HTTPS
-            //                  request
-            log(['error', err.log[0], err.log[1]]);
-
-            // Nom on the response data to free up memory
-            if (err.request !== undefined) err.request.resume();
-            var resolveMessage = '**Error:**\n' + err.message;
-            // blehp() is the equivalent of the resolve() function in promises
-            // i.e. blehp() is what helps output resolveMessage to Discord
-            blehp(resolveMessage);
-        }
-        else if (typeof err === 'string') blehp(err);
-        else {
-            // This really shouldn’t happen
-            console.log(errorC('derpibooru:'), err);
-            log(
-              [ 'error'
-              , 'catch'
-              , `Error in unexpected format (${typeof err})`
-              , err
-              ]
-            );
-            blehp(
-                '**Error:** Something really weird happened. This is a bug ' +
-                'in the command; please let the developer know.'
-            );
-        }
-    }); // getTotalNo.catch()
-}
 
 module.exports = {
     usage:
@@ -570,22 +517,13 @@ filter. This selects Derpibooru’s default filter.
             message: 'Retrieving Derpibooru image…'
           , edit: new Promise(resolve => {
                 let output;
-                let a = new Promise(resolve => {
-                    bacon(
-                        args
-                      , (message) => {
-                            output = message;
-                            log(
-                              [ 'debug'
-                              , 'blehp'
-                              , 'resolving message: ' + JSON.stringify(message)
-                              ]
-                            );
-                            resolve(output);
-                        }
-                      , msg.author.id
-                    );
-                }).then(message => {
+                getFilterAndId({ args: args, authorId: msg.author.id }).then(
+                    obj => fetchFilter(obj)
+                ).then(
+                    obj => fetchImage(obj)
+                ).then(
+                    obj => parseImage(obj)
+                ).then(function (message) {
                     log(
                         [ 'debug'
                         , 'blehp.then'
@@ -595,13 +533,44 @@ filter. This selects Derpibooru’s default filter.
                     );
                     resolve(message);
                 }).catch(err => {
-                    log(
-                        [ 'error'
-                        , 'blehp.catch'
-                        , 'unknown error (printed below)'
-                        , err
-                        ]
-                    );
+                    // If catch() caught an Error object, return
+                    // error.message
+                    if (err instanceof Error)
+                        blehp('**Error:** ' + err.message);
+                    // If error was the result of a promise reject()
+                    else if (typeof err === 'object') {
+                        // If err in reject(err) was an object:
+                        //     err.log[0]:  Function from which this
+                        //                  function was called
+                        //     err.log[1]:  Log message
+                        //     err.message: Message to return to user running
+                        //                  Discord command
+                        //     err.request: request callback, for stopping the
+                        //                  HTTPS request
+                        log(['error', err.log[0], err.log[1]]);
+
+                        // Nom on the response data to free up memory
+                        if (err.request !== undefined) err.request.resume();
+                        var resolveMessage = '**Error:**\n' + err.message;
+                        resolve(resolveMessage);
+                    }
+                    else if (typeof err === 'string') blehp(err);
+                    else {
+                        // This really shouldn’t happen
+                        console.log(errorC('derpibooru:'), err);
+                        log(
+                          [ 'error'
+                          , 'catch'
+                          , `Error in unexpected format (${typeof err})`
+                          , err
+                          ]
+                        );
+                        resolve(
+                            '**Error:** Something really weird happened. ' +
+                            'This is a bug in the command; please let the ' +
+                            'developer know.'
+                        );
+                    }
                 });
             }) // edit_async: new Promise({})
         });
