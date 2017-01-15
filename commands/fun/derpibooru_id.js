@@ -37,27 +37,12 @@ function log(arr) {
     return utils.fileLog(arr);
 }
 
-// This filter is used by default:
-// https://derpibooru.org/filters/133664
-//
-// or below - hides the below filters:
-// 1000 hours in ms paint, aryan pony, background pony strikes again,
-// barely pony related, base, blood, content-aware scale, deviantart stamp,
-// diamond dog, disembodied hands, drama, explicit, explicit source,
-// exploitable meme, fat, fluffy pony, fluffy pony grimdark, foalcon,
-// forced meme, g1 to g3.5, greentext, grimdark, grotesque, header,
-// image macro, impossibly large ass, impossibly large everything, inflation,
-// luftwaffe, male pregnancy, morbidly obese, nazi, nostril flare,
-// not pony related, obese, obligatory pony, oc:anon, oc:aryanne,
-// oc:kyrie, op is a duck, pony creator, pregnant, questionable, rule 34,
-// seizure warning, semi-grimdark, suggestive, text only, youtube,
-// youtube caption
-
-// Main function
-function bacon(args, blehp, authorID) {
-
-    var getFilterAndId = new Promise((resolve, reject) => {
-        var filterId, imageId;
+function getFilterAndId(obj) {
+    return new Promise((resolve, reject) => {
+        var args = obj.args
+          , authorId = obj.authorId
+          , filterId
+          , imageId;
 
         // Set filter ID and image ID that will be used in image retrieval
         if (args) {
@@ -78,13 +63,13 @@ function bacon(args, blehp, authorID) {
                 // Check if the filter ID is valid (i.e. positive integer)
                 // filter_int is the image ID as an integer
                 let filter_int = parseInt(filterId, 10);
-                if (isNaN(filter_int) &&
+                if (! isNaN(filter_int) &&
                     filter_int > 0 &&
                     filter_int < 999999) {
                     // Check if user is admin
                     // TODO: Make this available to mods as well, and make it
                     // toggleable
-                    if (! (admins.indexOf(authorID) > -1)) {
+                    if (! (admins.indexOf(authorId) > -1)) {
                         reject(
                             { log:
                                 [ ''
@@ -164,364 +149,345 @@ function bacon(args, blehp, authorID) {
 
         resolve({ filterId: filterId, imageId: imageId });
     });
+}
 
-    getFilterAndId.then(function (obj) {
-        // TODO: Fetch filter from
-        //       https://derpibooru.org/filters/[filter id].json
-        //       and show or don’t show image based on the tags in the JSON
-        //       output
-        return new Promise((resolve, reject) => {
-            var filterName
-              , filterTags
-              , filterId = obj.filterId
-              , imageId = obj.imageId;
-            request(
-                `/filters/${filterId}.json`
-              , (err, res, body) => {
-                    if (err) {
+
+function fetchFilter(obj) {
+    // Fetches filter from Derpibooru.
+    // obj = { filterId, imageId }
+    // where filterId is the filter ID to retrieve in this function
+    //       imageId is the image ID to retrieve (in the fetchImage function)
+    return new Promise((resolve, reject) => {
+        var filterName
+          , filterTags
+          , filterId = obj.filterId
+          , imageId = obj.imageId
+          , functionName = 'fetchFilter';
+        request(
+            `/filters/${filterId}.json`
+          , (err, res, body) => {
+                if (err) {
+                    reject(
+                      { log: [functionName, err.message]
+                      , message: 'Derpibooru returned an error.'
+                      }
+                    );
+                } else {
+                    let contentType = res.headers['content-type']
+                      , statusCode = res.statusCode;
+                    if (statusCode !== 200) {
                         reject(
-                          { log: ['fetchFilter', err.message]
+                          { log:
+                              [ functionName
+                              , `Returned status code ${statusCode}`
+                              ]
                           , message: 'Derpibooru returned an error.'
                           }
                         );
-                    } else {
-                        let contentType = res.headers['content-type']
-                          , statusCode = res.statusCode;
-                        if (statusCode !== 200) {
-                            reject(
-                              { log:
-                                  [ 'fetchFilter'
-                                  , `Returned status code ${statusCode}`
-                                  ]
-                              , message: 'Derpibooru returned an error.'
-                              }
-                            );
-                        } else if (! /^application\/json/.test(contentType)) {
-                            // If filter doesn’t exist, Derpibooru will return
-                            // status code 302 and redirect to front page.
-                            reject(
-                              { log:
-                                  [ 'fetchFilter'
-                                  , `Invalid content type (expected JSON, ` +
-                                    `got ${contentType}). This is likely ` +
-                                    `because filter ${filterId} cannot be ` +
-                                    `accessed.`
-                                  ]
-                              , message:
-                                    `Retrieving the Derpibooru filter ` +
-                                    `failed. Are you sure that the filter ` +
-                                    `at https://derpibooru.org/filter/` +
-                                    `${filterId} exists and is a public ` +
-                                    `filter?`
-                              }
-                            );
-                        } else {
-                            try {
-                                let res_parsed = JSON.parse(body);
-
-                                // Name of Derpibooru filter
-                                filterName = res_parsed.name;
-
-                                // Tags that filter hides. This will be
-                                // compared to the tags of the image requested
-                                // by user.
-                                filterTags = res_parsed.hidden_tags.split(', ');
-
-                                resolve(
-                                  { filterId: filterId
-                                  , filterName: filterName
-                                  , filterTags: filterTags
-                                  , imageId: imageId
-                                  }
-                                );
-                            } catch (e) {
-                                reject(
-                                  { log: ['fetchFilter', e.message]
-                                  , message:
-                                        'Changeling Bot couldn’t read what ' +
-                                        'Derpibooru returned.'
-                                  }
-                                );
-                            } // try {} catch (e) {}
-                        } // else
-                    } // if (err) {} else {}
-                } // (err, res, body) => { }
-            ); // request()
-        }); // return new Promise((resolve, reject) => { }
-
-    }).then(function (obj) {
-        return new Promise((resolve, reject) => {
-            // TODO: Add checking image tags against filter tags
-            var filterId = obj.filterId
-              , filterName = obj.filterName
-              , filterTags = obj.filterTags
-              , imageId = obj.imageId;
-
-            log(
-                [ 'debug'
-                , 'fetchImage'
-                , `Connecting to Derpibooru using this URL: /${imageId}.json`
-                ]
-            );
-
-            // The request that retrieves an image
-            request(
-                `/${imageId}.json`
-              , (err, res, body) => {
-                    let contentType = res.headers['content-type']
-                      , statusCode = res.statusCode;
-                    if (err) {
-                        reject(
-                          { log: ['fetchImage', e.message]
-                          , message:
-                                `There was an error in retrieving the image.`
-                          }
-                        );
-                    } else if (statusCode === 404) {
-                        reject(
-                          { log:
-                            [ 'fetchImage'
-                            , 'Returned 404 error'
-                            ]
-                          , message:
-                                `Image at https://derpibooru.org/${imageId} ` +
-                                `doesn’t exist.`
-                          }
-                        );
-                    } else if (statusCode !== 200) {
-                        reject(
-                          { log:
-                              [ 'fetchImage'
-                              , `Returned status code ${statusCode}`
-                              ]
-                          , message:
-                                'Retrieving image failed because Derpibooru ' +
-                                'returned something weird.'
-                          }
-                        );
                     } else if (! /^application\/json/.test(contentType)) {
+                        // If filter doesn’t exist, Derpibooru will return
+                        // status code 302 and redirect to front page.
                         reject(
                           { log:
-                              [ 'fetchImage'
-                              , `Received ${res.contentType} instead of JSON.`
+                              [ functionName
+                              , `Invalid content type (expected JSON, ` +
+                                `got ${contentType}). This is likely ` +
+                                `because filter ${filterId} cannot be ` +
+                                `accessed.`
                               ]
                           , message:
-                                'Retrieving image failed because Derpibooru ' +
-                                'returned something weird.'
+                                `Retrieving the Derpibooru filter ` +
+                                `failed. Are you sure that the filter ` +
+                                `at https://derpibooru.org/filter/` +
+                                `${filterId} exists and is a public ` +
+                                `filter?`
                           }
                         );
-
                     } else {
                         try {
                             let res_parsed = JSON.parse(body);
 
-                            // Image URL
-                            let imageUrl = res_parsed.representations.large;
-                            // Image source
-                            let imageSource = res_parsed.id;
-                            // Image tags
-                            let imageTags = res_parsed.tags;
+                            // Name of Derpibooru filter
+                            filterName = res_parsed.name;
 
-                            // Find intersection of filterTags and imageTags,
-                            // i.e. the tags of the filter and the tags of the
-                            // image to retrieve.
-                            let tagsIntersection = filterTags.filter(
-                                tag => imageTags.includes(tag)
+                            // Tags that filter hides. This will be
+                            // compared to the tags of the image requested
+                            // by user.
+                            filterTags = res_parsed.hidden_tags.split(', ');
+
+                            resolve(
+                              { filterId: filterId
+                              , filterName: filterName
+                              , filterTags: filterTags
+                              , imageId: imageId
+                              }
                             );
-
-                            let imageDescription =
-                                filterId === filterDefault
-                                    ? ''
-                                    : `**Filter used:** ${filterId} ` +
-                                      `- ${filterName}`;
-
-                            // Message (or rather, embed) returned
-                            //
-                            // color is in format 0xFFFFFF, i.e. any integer
-                            // from 0 to 2**24.
-                            //
-                            // In this case, set a random colour by doing this:
-                            //    1 << 24 shifts the 1 24 positions to the
-                            //        left, giving what is equal to 2**24
-                            //    Math.random() - turns into random number from
-                            //        zero to 2**24, of course
-                            //    | 0 - bitwise OR operator (for integers). In
-                            //        this case, this takes advantage of the
-                            //        fact that bitwise operators remove
-                            //        anything after decimal point
-                            //    Output is a random integer from 0 to 2**24.
-                            let result = {
-                                embed:
-                                  { title: 'Derpibooru page →'
-                                  , url: 'https://derpibooru.org/' +
-                                         imageSource
-                                  , description: imageDescription
-                                  , color: ((1 << 24) * Math.random() | 0)
-                                  , image: { url: 'https:' + imageUrl }
-                                  }
-                            };
-                            if (tagsIntersection.length === 0) {
-                                // If filter tags and image tags do not have
-                                // any elements in common, i.e. image does not
-                                // contain any tags blocked by filter, resolve
-                                resolve(result);
-                            } else {
-                                // Image contains hidden tags—tell user this
-                                // and fail
-                                reject(
-                                  { log:
-                                      [ 'parseImage'
-                                      , `Image ${imageId} contains tags ` +
-                                        `blocked by filter ${filterId}.`
-                                      ]
-                                  , message:
-                                      `Image at ` +
-                                      `<https://derpibooru.org/${imageId}> ` +
-                                      `contains tags blocked by the current ` +
-                                      `filter. ` +
-                                      `(blocking ` +
-                                      `**${tagsIntersection.join(', ')}**)`
-                                  }
-                                );
-                            }
                         } catch (e) {
                             reject(
-                              { log: ['parseImage', e.message]
+                              { log: [functionName, e.message]
                               , message:
-                                    'Changeling Bot can’t read what ' +
+                                    'Changeling Bot couldn’t read what ' +
                                     'Derpibooru returned.'
                               }
                             );
-                        }
+                        } // try {} catch (e) {}
                     } // else
-                } // (err, res, body) => { }
-            ); // request()
+                } // if (err) {} else {}
+            } // (err, res, body) => { }
+        ); // request()
+    }); // return new Promise((resolve, reject) => { }
+}
 
-            ////////////////////////////////
-            ////////////////////////////////
-            ////////////////////////////////
+function fetchImage(obj) {
+    // Fetches image from Derpibooru.
+    // obj = { filterId, filterName, filterTags, imageId }
+    // where filterId is the filter ID to retrieve in this function
+    //       filterName is the name of the filter
+    //       filterTags is the tags hidden in the filter
+    //       imageId is the image ID to retrieve (in the fetchImage function)
+    //       recurse (default: true) is whether to repeat this function
+    return new Promise((resolve, reject) => {
+        var filterId = obj.filterId
+          , filterName = obj.filterName
+          , filterTags = obj.filterTags
+          , imageId = obj.imageId
+          , recurse = obj.recurse
+          , functionName = 'fetchImage';
 
-            // The asynchronous request that retrieves an image
-            /*
-            let req = https.get(options, (res) => {
-                let contentType = res.headers['content-type'];
-                let statusCode = res.statusCode;
+        log(
+            [ 'debug'
+            , functionName
+            , `Connecting to Derpibooru using this URL: /${imageId}.json`
+            ]
+        );
 
-                // Error: Invalid status code
-                if (statusCode !== 200) {
-                    let message
-                      , errorCodeMessages;
-
-                    if (statusCode === 404) {
-                        message =
-                            'Can’t retrieve image because image doesn’t exist.';
-                    } else {
-                        message =
-                            'Can’t access Derpibooru API because of ' +
-                            `error ${statusCode}`;
-                    }
-
+        // The request that retrieves an image
+        request(
+            `/${imageId}.json`
+          , (err, res, body) => {
+                let contentType = res.headers['content-type']
+                  , statusCode = res.statusCode;
+                if (err) {
                     reject(
-                        { log:
-                            [ 'https.get'
-                            , `Returned HTTP status code ${statusCode}`
-                            ]
-                        , message: message
-                        , request: res
-                        }
+                      { log: [functionName, e.message]
+                      , message:
+                            `There was an error in retrieving the image.`
+                      }
                     );
-                }
-                // Error: Not actually JSON
-                else if (! /^application\/json/.test(contentType)) {
+                } else if (statusCode === 404) {
                     reject(
-                        { log:
-                            [ 'https.get'
-                            , `Received ${res.contentType} instead of JSON.`
-                            ]
-                        , message: `Derpibooru API returned something weird.`
-                        , request: res
-                        }
+                      { log:
+                        [ functionName
+                        , 'Returned 404 error'
+                        ]
+                      , message:
+                            `Image at https://derpibooru.org/${imageId} ` +
+                            `doesn’t exist.`
+                      }
                     );
-                }
+                } else if (statusCode !== 200) {
+                    reject(
+                      { log:
+                          [ functionName
+                          , `Returned status code ${statusCode}`
+                          ]
+                      , message:
+                            'Retrieving image failed because Derpibooru ' +
+                            'returned something weird.'
+                      }
+                    );
+                } else if (! /^application\/json/.test(contentType)) {
+                    reject(
+                      { log:
+                          [ functionName
+                          , `Received ${res.contentType} instead of JSON.`
+                          ]
+                      , message:
+                            'Retrieving image failed because Derpibooru ' +
+                            'returned something weird.'
+                      }
+                    );
 
-                res.setEncoding('utf8');
-                let raw = '';
-
-                res.on('data', chunk => raw += chunk);
-                res.on('end', () => {
+                } else {
                     try {
-                        // Parsed JSON response
-                        let response = JSON.parse(raw);
-
-                        // Image URL
-                        let image = response.representations.large;
-                        // Image source
-                        let source = response.id;
-
-                        // Message (or rather, embed) returned
-                        //
-                        // color is in format 0xFFFFFF, i.e. any integer from
-                        //     0 to 2**24.
-                        // In this case, set a random colour by doing this:
-                        //    1 << 24 shifts the 1 24 positions to the left,
-                        //        giving what is equal to 2**24
-                        //    Math.random() - turns into random number from
-                        //        zero to 2**24, of course
-                        //    | 0 - bitwise OR operator (for integers). In
-                        //        this case, this takes advantage of the
-                        //        fact that bitwise operators remove
-                        //        anything after decimal point
-                        //    Output is a random integer from 0 to 2**24.
-                        let result = {
-                            embed:
-                              { title: 'Derpibooru page →'
-                              , url: 'https://derpibooru.org/' + source
-                              , description:
-                                    filterId === ''
-                                        ? ''
-                                        : `**Filter used:** ${filterId}`
-                              , color: ((1 << 24) * Math.random() | 0)
-                              , image: { url: 'https:' + image }
+                        let imageParsed = JSON.parse(body);
+                        // Checks if duplicate_of is an integer (used with
+                        // isNaN())
+                        let duplicateOf_int =
+                            parseInt(imageParsed.duplicate_of, 10);
+                        // If this image is a duplicate of another, fetch that
+                        // instead (after checking if duplicate_of is a valid
+                        // derpibooru ID)
+                        if (! isNaN(duplicateOf_int) &&
+                            duplicateOf_int > 0 &&
+                            duplicateOf_int < 9999999 &&
+                            recurse !== false ) {
+                            log(
+                              [ 'info'
+                              , functionName
+                              , `Image ${imageId} is duplicate of ` +
+                                `${duplicateOf_int}, going another layer in.`
+                              ]
+                            );
+                            resolve(
+                                fetchImage(
+                                  { filterId: filterId
+                                  , filterName: filterName
+                                  , filterTags: filterTags
+                                  , imageId: duplicateOf_int
+                                  , recurse: false
+                                  }
+                                )
+                            );
+                        } else {
+                            resolve(
+                              { filterId: filterId
+                              , filterName: filterName
+                              , filterTags: filterTags
+                              , imageId: imageId
+                              , imageParsed: imageParsed
                               }
-                        };
-
-                        resolve(result);
+                            );
+                        }
                     } catch (e) {
-                        // The most common reason this will happen is when there
-                        // are no results (thus JSON cannot be parsed).
                         reject(
-                          { log: ['getTotalNo.then', e.message]
+                          { log: [functionName, e.message]
                           , message:
-                                'Changeling Bot couldn’t read what ' +
+                                'Changeling Bot can’t read what ' +
                                 'Derpibooru returned.'
                           }
                         );
                     }
-                }); // res.on('end' ... )
+                } // else
+            } // (err, res, body) => { }
+        ); // request()
+    }); // return new Promise((resolve, reject) => { }
+}
 
-                res.on('error', e => {
-                    reject(
-                      { log: ['getTotalNo.then', e.message]
-                      , message: 'Derpibooru returned an error.'
-                      }
-                    );
-                });
+function parseImage(obj) {
+    // Parses image from Derpibooru and turns it into returnable result.
+    // obj = { filterId, filterName, filterTags, imageId, imageParsed }
+    // where filterId is the filter ID to retrieve in this function
+    //       filterName is the name of the filter
+    //       filterTags is the tags hidden in the filter
+    //       imageId is the image ID to retrieve (in the fetchImage function)
+    //       imageParsed is the JSON output of the image ID, parsed.
+    return new Promise((resolve, reject) => {
+        var filterId = obj.filterId
+          , filterName = obj.filterName
+          , filterTags = obj.filterTags
+          , imageId = obj.imageId
+          , imageParsed = obj.imageParsed
+          , functionName = 'parseImage';
+        try {
+            // Image URL
+            let imageUrl = imageParsed.representations.large;
+            // Image source
+            let imageSource = imageParsed.id;
+            // Image tags
+            let imageTags = imageParsed.tags;
 
-                res.on('socket', function (socket) {
-                    res.on('timeout', e => {
-                        reject(
-                          { log: ['getTotalNo.then', e.message]
-                          , message: 'Connecting to Derpibooru timed out.'
-                          }
-                        );
-                        res.abort();
-                    });
-                });
+            // Find intersection of filterTags and imageTags,
+            // i.e. the tags of the filter and the tags of the
+            // image to retrieve.
+            let tagsIntersection = filterTags.filter(
+                tag => imageTags.includes(tag)
+            );
 
-            }); // let req = https.get
-            */
-        }); // return new Promise((resolve, reject) => { }
-    }).then(function (message) {
+            let imageDescription =
+                filterId === filterDefault
+                    ? ''
+                    : `**Filter used:** ${filterId} ` +
+                      `- ${filterName}`;
+
+            // Message (or rather, embed) returned
+            //
+            // color is in format 0xFFFFFF, i.e. any integer
+            // from 0 to 2**24.
+            //
+            // In this case, set a random colour by doing this:
+            //    1 << 24 shifts the 1 24 positions to the
+            //        left, giving what is equal to 2**24
+            //    Math.random() - turns into random number from
+            //        zero to 2**24, of course
+            //    | 0 - bitwise OR operator (for integers). In
+            //        this case, this takes advantage of the
+            //        fact that bitwise operators remove
+            //        anything after decimal point
+            //    Output is a random integer from 0 to 2**24.
+            let result = {
+                embed:
+                  { title: 'Derpibooru page →'
+                  , url: 'https://derpibooru.org/' +
+                         imageSource
+                  , description: imageDescription
+                  , color: ((1 << 24) * Math.random() | 0)
+                  , image: { url: 'https:' + imageUrl }
+                  }
+            };
+            if (tagsIntersection.length === 0) {
+                // If filter tags and image tags do not have
+                // any elements in common, i.e. image does not
+                // contain any tags blocked by filter, resolve
+                resolve(result);
+            } else {
+                // Image contains hidden tags—tell user this
+                // and fail
+                reject(
+                  { log:
+                      [ functionName
+                      , `Image ${imageId} contains tags ` +
+                        `blocked by filter ${filterId}.`
+                      ]
+                  , message:
+                      `Image at ` +
+                      `<https://derpibooru.org/${imageId}> ` +
+                      `contains tags blocked by the current ` +
+                      `filter. ` +
+                      `(blocking ` +
+                      `**${tagsIntersection.join(', ')}**)`
+                  }
+                );
+            }
+        } catch (e) {
+            reject(
+              { log: [functionName, e.message]
+              , message:
+                    'Changeling Bot can’t read what ' +
+                    'Derpibooru returned.'
+              }
+            );
+        }
+    });
+}
+
+
+
+// This filter is used by default:
+// https://derpibooru.org/filters/133664
+//
+// or below - hides the below filters:
+// 1000 hours in ms paint, aryan pony, background pony strikes again,
+// barely pony related, base, blood, content-aware scale, deviantart stamp,
+// diamond dog, disembodied hands, drama, explicit, explicit source,
+// exploitable meme, fat, fluffy pony, fluffy pony grimdark, foalcon,
+// forced meme, g1 to g3.5, greentext, grimdark, grotesque, header,
+// image macro, impossibly large ass, impossibly large everything, inflation,
+// luftwaffe, male pregnancy, morbidly obese, nazi, nostril flare,
+// not pony related, obese, obligatory pony, oc:anon, oc:aryanne,
+// oc:kyrie, op is a duck, pony creator, pregnant, questionable, rule 34,
+// seizure warning, semi-grimdark, suggestive, text only, youtube,
+// youtube caption
+
+// Main function
+function bacon(args, blehp, authorId) {
+    getFilterAndId({ args: args, authorId: authorId }).then(
+        obj => fetchFilter(obj)
+    ).then(
+        obj => fetchImage(obj)
+    ).then(
+        obj => parseImage(obj)
+    ).then(function (message) {
         // Success! Return message (or in this case, embed)
         blehp(message);
     }).catch(err => {
@@ -562,7 +528,6 @@ function bacon(args, blehp, authorID) {
             );
         }
     }); // getTotalNo.catch()
-
 }
 
 module.exports = {
@@ -612,7 +577,7 @@ filter. This selects Derpibooru’s default filter.
                             output = message;
                             log(
                               [ 'debug'
-                              , ''
+                              , 'blehp'
                               , 'resolving message: ' + JSON.stringify(message)
                               ]
                             );
@@ -623,7 +588,7 @@ filter. This selects Derpibooru’s default filter.
                 }).then(message => {
                     log(
                         [ 'debug'
-                        , ''
+                        , 'blehp.then'
                         , 'returning output of derpibooru: ' +
                           JSON.stringify(message)
                         ]
@@ -632,7 +597,7 @@ filter. This selects Derpibooru’s default filter.
                 }).catch(err => {
                     log(
                         [ 'error'
-                        , ''
+                        , 'blehp.catch'
                         , 'unknown error (printed below)'
                         , err
                         ]
