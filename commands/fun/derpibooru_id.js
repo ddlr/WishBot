@@ -17,10 +17,10 @@
 
 'use strict';
 
-const admins = require('./../../options/admins.json')
+const request_require = require('request')
+    , admins = require('./../../options/admins.json')
     , utils = require('./../../utils/utils.js')
     , filterDefault = 133664
-    , request_require = require('request')
     , request = request_require.defaults(
         { gzip: true
         , baseUrl: 'https://derpibooru.org/'
@@ -42,7 +42,8 @@ function getFilterAndId(obj) {
         var args = obj.args
           , authorId = obj.authorId
           , filterId
-          , imageId;
+          , imageId
+          , functionName = 'getFilterAndId';
 
         // Set filter ID and image ID that will be used in image retrieval
         if (args) {
@@ -50,7 +51,12 @@ function getFilterAndId(obj) {
             // With custom filters
 
             if (args.charAt(0) === '`') {
-                log(['debug', 'command - ', JSON.stringify(args.split(/ (.+)/))]);
+                log(
+                  [ 'debug'
+                  , functionName
+                  , JSON.stringify(args.split(/ (.+)/))
+                  ]
+                );
 
                 // first word is the the Derpibooru filter ID (e.g. `133664)
                 // the backtick is removed before the first word is
@@ -71,8 +77,9 @@ function getFilterAndId(obj) {
                     // toggleable
                     if (! (admins.indexOf(authorId) > -1)) {
                         reject(
-                            { log:
-                                [ ''
+                            { level: 'warn'
+                            , log:
+                                [ functionName
                                 , 'User doesn’t have permission to select ' +
                                   'own filter'
                                 ]
@@ -82,14 +89,15 @@ function getFilterAndId(obj) {
                             }
                         );
                     } else {
-                        log(['info', '', `using filter ID ${filterId}`]);
+                        log(['info', functionName, `using filter ID ${filterId}`]);
                     }
                 }
                 // Filter ID is not valid, so return error to user
                 else {
                     reject(
-                        { log:
-                            [ 'getFilterAndId'
+                        { level: 'info'
+                        , log:
+                            [ functionName
                             , `Derpibooru filter ${filterId} not in valid ` +
                               `format`
                             ]
@@ -106,7 +114,7 @@ function getFilterAndId(obj) {
             else {
                 filterId = filterDefault;
                 imageId = args;
-                log(['debug', '', 'no filter ID specified']);
+                log(['debug', functionName, 'no filter ID specified']);
             }
 
             // Check if image ID is valid
@@ -118,8 +126,9 @@ function getFilterAndId(obj) {
             // return false, which is the opposite of what we want here.
             if (! Number.isInteger(id_int) || id_int < 0 || id_int > 9999999) {
                 reject(
-                    { log:
-                        [ `getFilterAndId`
+                    { level: 'info'
+                    , log:
+                        [ functionName
                         , `Image ID ${imageId} not in valid format`
                         ]
                     , message:
@@ -131,15 +140,16 @@ function getFilterAndId(obj) {
 
             log(
               [ 'debug'
-              , ''
+              , functionName
               , `using filter ${filterId}; using image id ${imageId}`
               ]
             );
-            log(['debug', '', `Arguments used are ${args}`]);
+            log(['debug', functionName, `Arguments used are ${args}`]);
         } else {
             reject(
-                { log:
-                    [ 'getFilterAndId'
+                { level: 'info'
+                , log:
+                    [ functionName
                     , 'No arguments passed'
                     ]
                 , message: `You need to type in the image ID, silly!`
@@ -205,15 +215,15 @@ function fetchFilter(obj) {
                         );
                     } else {
                         try {
-                            let res_parsed = JSON.parse(body);
+                            let resParsed = JSON.parse(body);
 
                             // Name of Derpibooru filter
-                            filterName = res_parsed.name;
+                            filterName = resParsed.name;
 
                             // Tags that filter hides. This will be
                             // compared to the tags of the image requested
                             // by user.
-                            filterTags = res_parsed.hidden_tags.split(', ');
+                            filterTags = resParsed.hidden_tags.split(', ');
 
                             resolve(
                               { filterId: filterId
@@ -233,9 +243,9 @@ function fetchFilter(obj) {
                         } // try {} catch (e) {}
                     } // else
                 } // if (err) {} else {}
-            } // (err, res, body) => { }
+            } // (err, res, body) => {}
         ); // request()
-    }); // return new Promise((resolve, reject) => { }
+    }); // return new Promise((resolve, reject) => {}
 }
 
 function fetchImage(obj) {
@@ -276,7 +286,8 @@ function fetchImage(obj) {
                     );
                 } else if (statusCode === 404) {
                     reject(
-                      { log:
+                      { level: 'info'
+                      , log:
                         [ functionName
                         , 'Returned 404 error'
                         ]
@@ -516,30 +527,32 @@ filter. This selects Derpibooru’s default filter.
         return Promise.resolve({
             message: 'Retrieving Derpibooru image…'
           , edit: new Promise(resolve => {
-                let output;
                 getFilterAndId({ args: args, authorId: msg.author.id }).then(
                     obj => fetchFilter(obj)
                 ).then(
                     obj => fetchImage(obj)
                 ).then(
                     obj => parseImage(obj)
-                ).then(function (message) {
+                ).then(message => {
                     log(
-                        [ 'debug'
-                        , 'blehp.then'
-                        , 'returning output of derpibooru: ' +
-                          JSON.stringify(message)
-                        ]
+                      [ 'debug'
+                      , 'then'
+                      , 'returning output of derpibooru: ' +
+                        JSON.stringify(message)
+                      ]
                     );
                     resolve(message);
                 }).catch(err => {
-                    // If catch() caught an Error object, return
-                    // error.message
-                    if (err instanceof Error)
-                        blehp('**Error:** ' + err.message);
+                    // If catch() caught an Error object, return error.message
+                    if (err instanceof Error) {
+                        log(['error', 'catch', err.message, err.stack]);
+                        resolve('**Error:** ' + err.message);
+                    }
                     // If error was the result of a promise reject()
                     else if (typeof err === 'object') {
                         // If err in reject(err) was an object:
+                        //     err.level:   requested logging level (e.g.
+                        //                  ‘debug’) – default is ‘error’
                         //     err.log[0]:  Function from which this
                         //                  function was called
                         //     err.log[1]:  Log message
@@ -547,17 +560,18 @@ filter. This selects Derpibooru’s default filter.
                         //                  Discord command
                         //     err.request: request callback, for stopping the
                         //                  HTTPS request
-                        log(['error', err.log[0], err.log[1]]);
+                        let levels = utils.loggingLevelsNames;
+                        if (levels.hasOwnProperty(err.level))
+                            log([err.level, err.log[0], err.log[1]]);
+                        else
+                            log(['error', err.log[0], err.log[1]]);
 
-                        // Nom on the response data to free up memory
-                        if (err.request !== undefined) err.request.resume();
                         var resolveMessage = '**Error:**\n' + err.message;
                         resolve(resolveMessage);
                     }
-                    else if (typeof err === 'string') blehp(err);
+                    else if (typeof err === 'string') resolve(err);
                     else {
                         // This really shouldn’t happen
-                        console.log(errorC('derpibooru:'), err);
                         log(
                           [ 'error'
                           , 'catch'
@@ -571,7 +585,7 @@ filter. This selects Derpibooru’s default filter.
                             'developer know.'
                         );
                     }
-                });
+                }); // catch(err => {}
             }) // edit_async: new Promise({})
         });
 

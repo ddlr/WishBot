@@ -20,12 +20,16 @@ const options = require('./../options/options.json')
               { filename: 'error.log' // The name of the logging file
               , prettyPrint: true
               , json: false
-              , level: 'info' // TODO: Change this and winston.transports.Console to warn when pushing to prod
+              , level: options.debugging_level
+                    ? options.debugging_level
+                    : 'warn'
               , colorize: true // Add COLOURS
               }
             )
           , new (winston.transports.Console)(
-              { level: 'info' // Minimum error level in order to print
+              { level: options.debugging_level // Minimum error level in order to print
+                    ? options.debugging_level
+                    : 'warn'
               , colorize: true
               }
             )
@@ -35,6 +39,8 @@ const options = require('./../options/options.json')
       }
     )
   , fs = require('fs');
+
+exports.loggingLevelsNames = loggingLevels.levels;
 
 //Covert string to having just first character uppercase and the rest lowercase
 exports.toTitleCase = str => {

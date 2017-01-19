@@ -11,5 +11,6 @@
         "database": ""
     },
     "show_args_in_console": false,
-    "verbose_logging": false
+    "verbose_logging": false,
+    "debugging_level": "warn"
 }
