@@ -1,5 +1,6 @@
 var utils = require('./../../utils/utils.js'),
-    admins = require('./../../options/admins.json');
+    admins = require('./../../options/admins.json'),
+    options = require('./../../options/options.json');
 
 module.exports = {
     aliases: ['commands'],
@@ -38,10 +39,15 @@ module.exports = {
                 let helpMsg =
 `**__${bot.user.username}'s Commands:__**
 
-Note that most commands require a **prefix** or **mentioning the bot** at the \
-start to run, e.g. \`~ping\` (default is a tilde, may be different depending \
-on server) or \`@Changeling Bot ping\`. See **Requires prefix or bot \
-mention** in \`~help (name of command of alias)\` to check.\n`;
+Note that most commands require a **command prefix** or **mentioning the \
+bot** at the start of the command to run. For example, the \`ping\` command \
+is run as \`${options.prefix}ping\` (command prefix may be different \
+depending on server) or \`@Changeling Bot ping\`. See **Requires prefix or \
+bot mention** in \`[command prefix]help (name of command of alias)\` to check.
+
+Also note that the command prefix can be changed using \
+\`${options.prefix}setprefix\`. The **command prefix on the current server** \
+can always be checked by running \`${options.prefix}checkprefix\`.\n`;
 
                 // Check if command should be included in output of help command
                 // Prints true if yes, false if no
