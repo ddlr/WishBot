@@ -28,7 +28,7 @@ function log(arr) {
 
 // Escape tags before inserting into HTTPS request URL.
 function escapeTags(tags) {
-    var functionName = 'escapeTags';
+    const functionName = 'escapeTags';
     // Wildcard * when no tags is because query to Derpibooru
     // cannot be blank (otherwise empty string returned by server)
     log(['debug', functionName, `escaped tags: ${qs.escape(tags)}`]);
@@ -37,11 +37,11 @@ function escapeTags(tags) {
 
 function getFilterAndTags(obj) {
     return new Promise((resolve, reject) => {
+        const functionName = 'getFilterAndTags';
         var args = obj.args
           , authorId = obj.authorId
           , filterId
-          , tags
-          , functionName = 'getFilterAndTags';
+          , tags;
 
         // Set tags that will be used in search
         if (args) {
@@ -152,9 +152,9 @@ function getFilterAndTags(obj) {
 function getResultsTotal(obj) {
     // Get the total number of search results
     return new Promise((resolve, reject) => {
+        const functionName = 'getResultsTotal';
         var filterId = obj.filterId
-          , tags = obj.tags
-          , functionName = 'getResultsTotal';
+          , tags = obj.tags;
 
         log(
           [ 'debug'
@@ -240,10 +240,10 @@ function getResultsTotal(obj) {
 
 function fetchImage(obj) {
     return new Promise((resolve, reject) => {
+        const functionName = 'fetchImage';
         var resultsTotal = obj.total
           , filterId = obj.filterId
-          , tags = obj.tags
-          , functionName = 'fetchImage';
+          , tags = obj.tags;
         // Getting total number of search results succeeded
         // (this value stored in resultsTotal)
 
@@ -453,7 +453,7 @@ would in Derpibooru’s search box):
                     log(
                       [ 'debug'
                       , 'then'
-                      , 'returning output of derpibooru: ' +
+                      , 'returning output: ' +
                         JSON.stringify(message)
                       ]
                     );

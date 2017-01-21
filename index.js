@@ -424,7 +424,7 @@ function reloadModules(msg) {
         admins = reload('./options/admins.json');
         playing = reload('./lists/playing.json');
         commandLoader.load().then(() => {
-            console.log(botC('@' + bot.user.username + ': ') + errorC('Successfully Reloaded All Modules'));
+            console.log(botC('@' + bot.user.username + ': ') + miscC('Successfully Reloaded All Modules'));
             msg.channel.createMessage('Successfully reloaded all modules').then(message => utils.messageDelete(message))
         });
     } catch (e) {

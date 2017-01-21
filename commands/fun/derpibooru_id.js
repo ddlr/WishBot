@@ -7,13 +7,8 @@
 //
 // TODO: Move database to PostgreSQL and put filters in there
 //
-// TODO: Make reject() (i.e. log()) function names more sensible
-//
 // TODO: request -> cachedrequest
 //       Add some sort of caching function for the default filter (133664)
-//
-// TODO: Support duplicates
-//       e.g. https://derpibooru.org/341492.json
 
 'use strict';
 
@@ -39,11 +34,11 @@ function log(arr) {
 
 function getFilterAndId(obj) {
     return new Promise((resolve, reject) => {
+        const functionName = 'getFilterAndId';
         var args = obj.args
           , authorId = obj.authorId
           , filterId
-          , imageId
-          , functionName = 'getFilterAndId';
+          , imageId;
 
         // Set filter ID and image ID that will be used in image retrieval
         if (args) {

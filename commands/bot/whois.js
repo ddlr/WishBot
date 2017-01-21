@@ -11,7 +11,7 @@ module.exports = {
             args = obj.args;
         return new Promise(resolve => {
             //Get user using either the mention or using the getName function
-            let = user = msg.mentions.length === 1 ? msg.channel.guild.members.get(msg.mentions[0].id) : getName(msg, args);
+            let user = msg.mentions.length === 1 ? msg.channel.guild.members.get(msg.mentions[0].id) : getName(msg, args);
             //This should always fire 
             if (user) {
                 //Resolves will info about the user using moment to format the date and times properly as well as seeing how long ago stuff was
