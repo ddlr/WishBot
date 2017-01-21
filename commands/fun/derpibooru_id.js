@@ -494,19 +494,19 @@ blocked here: <https://derpibooru.org/filters/133664>
 **Using a different filter:**
 If the current filter is too restrictive for you, you can use a different \
 one. This works the same way as on Derpibooru \
-(https://derpibooru.org/filters) and uses the filter ID. **Note that this \
+(<https://derpibooru.org/filters>) and uses the filter ID. **Note that this \
 feature will only work for bot admins for the time being.** Also note that \
 due to the Derpibooru API that this bot uses, only hidden tags will have any \
 effect — spoilered tags will still show as normal.
 
 **Usage:**
-\`\`\`markdown
-# Return the image at https://derpibooru.org/508531
-~dpi 508531
-# Return the image at https://derpibooru.org/1335237, using a different \
-filter. This selects Derpibooru’s default filter.
-~dpi \`133664 1335237
-\`\`\``
+Return the image at <https://derpibooru.org/508531>
+\`\`[command prefix]dpi 508531\`\`
+
+Return the image at <https://derpibooru.org/1335237>, using a different \
+filter. This selects Derpibooru’s default filter, available at \
+<https://derpibooru.org/100073>.
+\`\`[command prefix]dpi \`100073 1335237\`\``
   , aliases: ['dpi']
   , dm: true
   , delete: false

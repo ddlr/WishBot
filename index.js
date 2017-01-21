@@ -262,7 +262,7 @@ bot.on("messageCreate", msg => {
             // sent message after 5s
             msg.channel.createMessage({
                 // Message content
-                content: response.message ? response.message : '(empty message)',
+                content: response.message ? response.message : '',
                 // Message embed
                 embed: response.embed ? response.embed : undefined,
                 // Allow/deny use of everyone or @here in messages

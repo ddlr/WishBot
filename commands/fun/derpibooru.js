@@ -422,14 +422,14 @@ blocked here: <https://derpibooru.org/filters/133664>
 Inspired by fourhts’ Cute Horses. (http://wikipedia.sexy/hoers)
 
 **Usage:**
-\`\`\`markdown
-# Return any image from Derpibooru
-~dp
-# Return random image with the following tags (in the same format as you \
-would in Derpibooru’s search box):
-~dp changeling OR raripie
-\`\`\`
-\`\`\``
+Return any image, randomly selected, from Derpibooru.
+\`\`[command prefix]derpibooru\`\`
+
+Return random image, filtering by a search query. This works in the same \
+format as you would in Derpibooru’s search box. In this case, this is \
+equivalent to searching \`changeling OR raripie\` on Derpibooru and selecting \
+one of the results at random.
+\`\`[guild prefix]derpibooru changeling OR raripie\`\``
   , aliases: ['dp', 'dpc']
   , dm: true
   , delete: false
