@@ -95,9 +95,7 @@ exports.fileLog = arr => {
     //   arr[4]: Error stack (optional)
     var a, b, c, d;
 
-    if (arr[0] instanceof Error) {
-        fileLog.log('error', arr[0]);
-    } else {
+    if (arr instanceof Array) {
         a = arr[0] ? arr[0] : 'unknown file';
 
         c = arr[2] ? arr[2] : 'unknown function';
@@ -116,6 +114,8 @@ exports.fileLog = arr => {
         fileLog.log(b, `${a} - (${c}) ${d}`);
         if (arr[4])
             fileLog.log('error', arr[4]);
+    } else {
+        fileLog.log('error', arr);
     }
 }
 
