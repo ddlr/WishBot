@@ -9,7 +9,9 @@ const utils = require('./../../utils/utils.js')
             { 'User-Agent': 'Changeling Bot (Discord bot) by Chryssi'
             }
         }
-      );
+      )
+    , CHAPTERS_MAX = 8 // Maximum number of chapters listed
+    , DESCRIPTION_MAX = 500; // Maximum description length
 
 // Hardcode the first parameter (i.e. file from which fileLog was called) to
 // avoid repetition
@@ -92,13 +94,23 @@ function parseStoryInfo(body) {
 
                 // This relies on the assumption that the error key will have a
                 // value that can be converted to a string.
+                let logLevel;
+                if (resParsed.error === 'Invalid story id') {
+                    // Invalid story IDs are normal, so don’t treat this as an
+                    // error in the command. The ‘error’ log level is reserved
+                    // for unexpected problems caused by the API or by a bug.
+                    logLevel = 'info';
+                } else {
+                    logLevel = 'error';
+                }
                 reject(
-                  { log:
+                  { level: logLevel
+                  , log:
                       [ functionName
                       , `Fimfiction returned error: ${resParsed.error}`
                       ]
                   , message:
-                        `Fimfiction’s API returned error: ` +
+                        `Fimfiction’s API returned: ` +
                         `${resParsed.error}. Check that the story you’re ` +
                         `looking for can be accessed.`
                   }
@@ -120,8 +132,15 @@ function parseStoryInfo(body) {
             }
 
             let story = resParsed.story;
-
             let storyCategories = [];
+
+            // Abbreviations of story categories. This is so the fields
+            // actually fit in the resulting embed.
+            let catAbbrevs =
+              { 'Alternate Universe': 'AU'
+              , 'Equestria Girls': 'EqG'
+              , 'Slice of Life': 'SoL'
+              };
 
             // story.categories looks like this:
             // { '2nd Person': false
@@ -131,28 +150,58 @@ function parseStoryInfo(body) {
             // The below converts it to this:
             // [ '2nd Person'
             // , 'Adventure'
-            // , 'Alternate Universe' ...
+            // , 'AU' ...
             // ]
             Object.keys(story.categories).forEach(cat => {
                 if (story.categories[cat]) {
-                    if (storyCategories.includes(cat)) {
-                        // Duplicate tags (this REALLY shouldn't happen)
-                        log(
-                          [ 'warn'
-                          , functionName
-                          , `Duplicate tag ${cat} in story ID ${storyId}`
-                          ]
+                    // Add tag to list
+                    if (catAbbrevs.hasOwnProperty(cat)) {
+                        storyCategories.push(
+                            catAbbrevs[cat]
                         );
                     } else {
-                        // Add tag to list
                         storyCategories.push(cat);
                     }
                 }
             });
 
+            // Story chapters listing
+            storyChaptersArray = [];
+            for (let i = 0; i < story.chapters.length; i++) {
+                let chapter = story.chapters[i];
+                storyChaptersArray.push(
+                    `${chapter.title} *(${chapter.words} words, ` +
+                    `${chapter.views} views)*`
+                );
+            }
+
+            let storyChapters;
+            if (story.chapters.length > CHAPTERS_MAX) {
+                storyChapters =
+                    storyChaptersArray.slice(0, CHAPTERS_MAX).join('\n');
+                storyChapters +=
+                    `\n*… ${story.chapters.length - CHAPTERS_MAX} left*`;
+            } else {
+                storyChapters = storyChaptersArray.join('\n');
+            }
+
+            let storyDescription = '';
+            // Shorten description
+            // No support for BBCode because I lazy
+            // though feel free to implement it if you’re not
+            if (story.description.length > DESCRIPTION_MAX) {
+                // Don’t have anything too long otherwise Discord will spew a
+                // 400 BAD REQUEST at me
+                storyDescription =
+                    story.description.substring(0, DESCRIPTION_MAX) +
+                    '…';
+            } else {
+                storyDescription = story.description;
+            }
+
             resolve(
               { storyCategories: storyCategories
-              , storyTitle: story.title
+              , storyTitle: story.title // Story titles are max 255 chars
               , storyImage: story.image
               , storyUrl: story.url
               , storyAuthor: story.author
@@ -164,7 +213,8 @@ function parseStoryInfo(body) {
               , storyComments: story.comments
               , storyLikes: story.likes
               , storyDislikes: story.dislikes
-              , storyDescription: story.description
+              , storyDescription: storyDescription // Absurd limit (2MB)
+              , storyChapters: storyChapters // Max 255 characters each
               , storyChapterCount: story.chapter_count
               , storyId: story.id
               }
@@ -199,6 +249,7 @@ function createStoryEmbed(obj) {
           , storyLikes = obj.storyLikes
           , storyDislikes = obj.storyDislikes
           , storyDescription = obj.storyDescription
+          , storyChapters = obj.storyChapters
           , storyChapterCount = obj.storyChapterCount
           , storyId = obj.storyId;
 
@@ -219,7 +270,7 @@ function createStoryEmbed(obj) {
                   , url: storyUrl
                   }
               , color: ((1 << 24) * Math.random() | 0) // Randomly sets the colour
-              , fields: // TODO: Figure out how to indent this properly
+              , fields:
                   [ { name: 'Author'
                     , value: `**${storyAuthor.name}** (id: ${storyAuthor.id})`
                     , inline: true
@@ -245,14 +296,17 @@ function createStoryEmbed(obj) {
                     , inline: true
                     }
                   , { name: 'Score' // TODO: Figure out a way to make this look slightly less shitty
-                    , value: `${storyLikes} ▲ | ${storyDislikes} ▼`
+                    , value:
+                          storyLikes === -1 && storyDislikes === -1
+                              ? 'Not enough votes'
+                              : `${storyLikes} ▲ | ${storyDislikes} ▼`
                     , inline: true
                     }
                   , { name: 'Description'
                     , value: storyDescription
                     }
                   , { name: `Chapters (${storyChapterCount})`
-                    , value: '(coming soon)' // TODO: Actually finish this
+                    , value: `${storyChapters}`
                     }
                   ]
               }
