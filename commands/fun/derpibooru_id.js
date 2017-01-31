@@ -441,7 +441,7 @@ function parseImage(obj) {
                 // and fail
                 reject(
                   { level: 'info'
-                    log:
+                  , log:
                       [ functionName
                       , `Image ${imageId} contains tags ` +
                         `blocked by filter ${filterId}.`
