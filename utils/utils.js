@@ -17,7 +17,7 @@ const options = require('./../options/options.json')
   , fileLog = new(winston.Logger)( // Creates log transport to log to error.log file
       { transports:
           [ new (winston.transports.File)( // Log file
-              { filename: 'error.log' // The name of the logging file
+              { filename: '/home/blehp/Wishbot/error.log' // The name of the logging file. Winston errors out if I provide a relative path instead
               , prettyPrint: true
               , json: false
               , level: options.debugging_level
