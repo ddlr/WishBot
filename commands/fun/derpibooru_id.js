@@ -440,7 +440,8 @@ function parseImage(obj) {
                 // Image contains hidden tags—tell user this
                 // and fail
                 reject(
-                  { log:
+                  { level: 'info'
+                    log:
                       [ functionName
                       , `Image ${imageId} contains tags ` +
                         `blocked by filter ${filterId}.`
