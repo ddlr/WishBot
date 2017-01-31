@@ -28,24 +28,24 @@ module.exports = {
                             value: user.nick !== null ? user.nick : 'None.',
                             inline: true
                         }, {
-                            name: 'Playing',
-                            value: user.game !== null ? user.game.name : 'None.',
+                            name: 'User ID',
+                            value: user.id,
                             inline: true
                         }, {
                             name: 'Join Date',
                             value: `${moment(user.joinedAt).utc().format('ddd MMM DD YYYY | HH:mm:ss')} (${moment(user.joinedAt).fromNow()}) `,
                             inline: true
                         }, {
-                            name: 'User ID',
-                            value: user.id,
-                            inline: true
-                        }, {
-                            name: 'Status',
-                            value: user.status,
+                            name: 'Playing',
+                            value: user.game !== null ? user.game.name : 'None.',
                             inline: true
                         }, {
                             name: 'Creation Date',
                             value: `${moment(user.user.createdAt).utc().format('ddd MMM DD YYYY | HH:mm:ss')} (${moment(user.user.createdAt).fromNow()})`,
+                            inline: true
+                        }, {
+                            name: 'Status',
+                            value: user.status,
                             inline: true
                         }]
                     }
