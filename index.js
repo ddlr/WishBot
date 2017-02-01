@@ -307,7 +307,7 @@ bot.on("messageCreate", msg => {
 const evalLog = new(winston.Logger)(
    { transports:
       [ new (winston.transports.File)( // Log file
-          { filename: '/home/blehp/Wishbot/eval.log' // Path to logging file.
+          { filename: 'eval.log' // Path to logging file.
           , prettyPrint: true
           , json: false
           , level: 'info'

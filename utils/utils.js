@@ -17,19 +17,14 @@ const options = require('./../options/options.json')
   , fileLog = new(winston.Logger)( // Creates log transport to log to error.log file
       { transports:
           [ new (winston.transports.File)( // Log file
-              { filename: '/home/blehp/Wishbot/error.log' // The name of the logging file. Winston errors out if I provide a relative path instead
+              { filename: 'error.log' // The name of the logging file. Winston errors out if I provide a relative path instead
               , prettyPrint: true
               , json: false
-              , level: options.debugging_level
-                    ? options.debugging_level
-                    : 'warn'
-              , colorize: true // Add COLOURS
+              , level: options.debugging_level || 'warn'
               }
             )
           , new (winston.transports.Console)(
-              { level: options.debugging_level // Minimum error level in order to print
-                    ? options.debugging_level
-                    : 'warn'
+              { level: options.debugging_level || 'warn' // Minimum error level in order to print
               , colorize: true
               }
             )
@@ -96,10 +91,10 @@ exports.fileLog = arr => {
     var a, b, c, d;
 
     if (arr instanceof Array) {
-        a = arr[0] ? arr[0] : 'unknown file';
+        a = arr[0] || 'unknown file';
 
-        c = arr[2] ? arr[2] : 'unknown function';
-        d = arr[3] ? arr[3] : 'unknown error';
+        c = arr[2] || 'unknown function';
+        d = arr[3] || 'unknown error';
 
         // Looks like
         //   aRandomFile - (erroringFunction) error message here
@@ -110,7 +105,6 @@ exports.fileLog = arr => {
         } else {
             b = arr[1];
         }
-        // If there’s an error stack, print that instead
         fileLog.log(b, `${a} - (${c}) ${d}`);
         if (arr[4])
             fileLog.log('error', arr[4]);
