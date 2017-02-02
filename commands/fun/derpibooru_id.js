@@ -7,13 +7,8 @@
 //
 // TODO: Move database to PostgreSQL and put filters in there
 //
-// TODO: Make reject() (i.e. log()) function names more sensible
-//
 // TODO: request -> cachedrequest
 //       Add some sort of caching function for the default filter (133664)
-//
-// TODO: Support duplicates
-//       e.g. https://derpibooru.org/341492.json
 
 'use strict';
 
@@ -39,11 +34,11 @@ function log(arr) {
 
 function getFilterAndId(obj) {
     return new Promise((resolve, reject) => {
+        const functionName = 'getFilterAndId';
         var args = obj.args
           , authorId = obj.authorId
           , filterId
-          , imageId
-          , functionName = 'getFilterAndId';
+          , imageId;
 
         // Set filter ID and image ID that will be used in image retrieval
         if (args) {
@@ -445,7 +440,8 @@ function parseImage(obj) {
                 // Image contains hidden tags—tell user this
                 // and fail
                 reject(
-                  { log:
+                  { level: 'info'
+                  , log:
                       [ functionName
                       , `Image ${imageId} contains tags ` +
                         `blocked by filter ${filterId}.`
@@ -499,19 +495,19 @@ blocked here: <https://derpibooru.org/filters/133664>
 **Using a different filter:**
 If the current filter is too restrictive for you, you can use a different \
 one. This works the same way as on Derpibooru \
-(https://derpibooru.org/filters) and uses the filter ID. **Note that this \
+(<https://derpibooru.org/filters>) and uses the filter ID. **Note that this \
 feature will only work for bot admins for the time being.** Also note that \
 due to the Derpibooru API that this bot uses, only hidden tags will have any \
 effect — spoilered tags will still show as normal.
 
 **Usage:**
-\`\`\`markdown
-# Return the image at https://derpibooru.org/508531
-~dpi 508531
-# Return the image at https://derpibooru.org/1335237, using a different \
-filter. This selects Derpibooru’s default filter.
-~dpi \`133664 1335237
-\`\`\``
+Return the image at <https://derpibooru.org/508531>
+\`\`[command prefix]dpi 508531\`\`
+
+Return the image at <https://derpibooru.org/1335237>, using a different \
+filter. This selects Derpibooru’s default filter, available at \
+<https://derpibooru.org/100073>.
+\`\`[command prefix]dpi \`100073 1335237\`\``
   , aliases: ['dpi']
   , dm: true
   , delete: false

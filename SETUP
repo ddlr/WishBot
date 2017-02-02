@@ -1,4 +1,20 @@
 ===============================================================================
+Create the following:
+
+database/usageCheck.json
+database/guildPrefixes.json
+
+each with the contents (empty object):
+{}
+
+===============================================================================
+Create avatars/regular/ and avatars/xmas/ directories and put avatars in it
+
+===============================================================================
+Change filename in winston.Logger (in index.js and utils/utils.js) to reflect
+actual paths
+
+===============================================================================
 TO INSTALL MARIADB (for Ubuntu and Arch Linux)
 
 To install mariadb:

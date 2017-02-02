@@ -28,7 +28,7 @@ function log(arr) {
 
 // Escape tags before inserting into HTTPS request URL.
 function escapeTags(tags) {
-    var functionName = 'escapeTags';
+    const functionName = 'escapeTags';
     // Wildcard * when no tags is because query to Derpibooru
     // cannot be blank (otherwise empty string returned by server)
     log(['debug', functionName, `escaped tags: ${qs.escape(tags)}`]);
@@ -37,11 +37,11 @@ function escapeTags(tags) {
 
 function getFilterAndTags(obj) {
     return new Promise((resolve, reject) => {
+        const functionName = 'getFilterAndTags';
         var args = obj.args
           , authorId = obj.authorId
           , filterId
-          , tags
-          , functionName = 'getFilterAndTags';
+          , tags;
 
         // Set tags that will be used in search
         if (args) {
@@ -152,9 +152,9 @@ function getFilterAndTags(obj) {
 function getResultsTotal(obj) {
     // Get the total number of search results
     return new Promise((resolve, reject) => {
+        const functionName = 'getResultsTotal';
         var filterId = obj.filterId
-          , tags = obj.tags
-          , functionName = 'getResultsTotal';
+          , tags = obj.tags;
 
         log(
           [ 'debug'
@@ -240,10 +240,10 @@ function getResultsTotal(obj) {
 
 function fetchImage(obj) {
     return new Promise((resolve, reject) => {
+        const functionName = 'fetchImage';
         var resultsTotal = obj.total
           , filterId = obj.filterId
-          , tags = obj.tags
-          , functionName = 'fetchImage';
+          , tags = obj.tags;
         // Getting total number of search results succeeded
         // (this value stored in resultsTotal)
 
@@ -422,14 +422,14 @@ blocked here: <https://derpibooru.org/filters/133664>
 Inspired by fourhts’ Cute Horses. (http://wikipedia.sexy/hoers)
 
 **Usage:**
-\`\`\`markdown
-# Return any image from Derpibooru
-~dp
-# Return random image with the following tags (in the same format as you \
-would in Derpibooru’s search box):
-~dp changeling OR raripie
-\`\`\`
-\`\`\``
+Return any image, randomly selected, from Derpibooru.
+\`\`[command prefix]derpibooru\`\`
+
+Return random image, filtering by a search query. This works in the same \
+format as you would in Derpibooru’s search box. In this case, this is \
+equivalent to searching \`changeling OR raripie\` on Derpibooru and selecting \
+one of the results at random.
+\`\`[guild prefix]derpibooru changeling OR raripie\`\``
   , aliases: ['dp', 'dpc']
   , dm: true
   , delete: false
@@ -453,7 +453,7 @@ would in Derpibooru’s search box):
                     log(
                       [ 'debug'
                       , 'then'
-                      , 'returning output of derpibooru: ' +
+                      , 'returning output: ' +
                         JSON.stringify(message)
                       ]
                     );

@@ -4,6 +4,8 @@ const Eris = require('eris'), //The bot's api library
     }),
     fs = require('fs'), //For reading/writing to a file
     axios = require('axios'), //HTTP client for requests to and from websites
+    util = require('util'), // For util.inspect()
+    winston = require('winston'), // Used for logging to file
     reload = require('require-reload')(require);
 
 var options = reload('./options/options.json'),
@@ -262,7 +264,7 @@ bot.on("messageCreate", msg => {
             // sent message after 5s
             msg.channel.createMessage({
                 // Message content
-                content: response.message ? response.message : '(empty message)',
+                content: response.message ? response.message : '',
                 // Message embed
                 embed: response.embed ? response.embed : undefined,
                 // Allow/deny use of everyone or @here in messages
@@ -297,19 +299,70 @@ bot.on("messageCreate", msg => {
 
 });
 
+// Log the output of sudo commands in a separate file so they don’t clog up the
+// main one
+//
+// e.g. sudo util.inspect(bot.guilds.get('[guild ID]').channels) would be
+// printed to evalLog file
+const evalLog = new(winston.Logger)(
+   { transports:
+      [ new (winston.transports.File)( // Log file
+          { filename: 'eval.log' // Path to logging file.
+          , prettyPrint: true
+          , json: false
+          , level: 'info'
+          , colorize: true // Add COLOURS
+          }
+        )
+      , new (winston.transports.Console)(
+          { level: 'info' // Minimum error level in order to print
+          , colorize: true
+          }
+        )
+      ]
+  , levels: { info: 0 }
+  , colors: { info: 'yellow' }
+  }
+);
+
+
 function evalInput(msg, args) {
-    var result;
-    //Trys to run eval on the text and output either an error or the result if applicable 
-    try {
-        result = eval("try{" + args + "}catch(err){console.log(err);msg.channel.createMessage(\"```\"+err+\"```\");}");
-    } catch (e) {
-        console.log(e)
-        msg.channel.createMessage("```" + e + "```");
+    // Literally evaluates a string. Very dangerous. But also very cool.
+    function parseResult(result) {
+        try {
+            // If result isn't undefined and it isn't an object return to
+            // channel
+            if (result && typeof result !== 'object')
+                msg.channel.createMessage(result);
+            evalLog.log('info', 'output is of type ' + typeof result);
+            if (typeof result === 'object') {
+                evalLog.log('info', util.inspect(result, { depth: 1 }));
+            } else {
+                evalLog.log('info', result);
+            }
+        } catch (e) {
+            console.log(e);
+        }
     }
-    //If result isn't undefined and it isn't an object return to channel
-    if (result && typeof result !== 'object')
-        msg.channel.createMessage(result);
-    console.log(result)
+
+    // Tries to run eval on the text and output either an error or the result
+    // if applicable
+    if (typeof eval(args).then === 'function') {
+        // Object is promise
+        console.log('sudo: is a promise');
+        eval(args).then(result => { return parseResult(result) }).catch(err => {
+            console.log(err);
+            msg.channel.createMessage(`\`\`\`${err}\`\`\``);
+        });
+    } else {
+        try {
+            console.log('sudo: not a promise');
+            parseResult(eval(args));
+        } catch (err) {
+            console.log(err);
+            msg.channel.createMessage(`\`\`\`${err}\`\`\``);
+        }
+    }
 }
 
 //New Guild Member Event
@@ -424,7 +477,7 @@ function reloadModules(msg) {
         admins = reload('./options/admins.json');
         playing = reload('./lists/playing.json');
         commandLoader.load().then(() => {
-            console.log(botC('@' + bot.user.username + ': ') + errorC('Successfully Reloaded All Modules'));
+            console.log(botC('@' + bot.user.username + ': ') + miscC('Successfully Reloaded All Modules'));
             msg.channel.createMessage('Successfully reloaded all modules').then(message => utils.messageDelete(message))
         });
     } catch (e) {

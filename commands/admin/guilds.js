@@ -8,7 +8,7 @@ module.exports = {
             //If no args return the bots top 10 guilds
             if (!args) resolve({
                 message: `__**${bot.user.username}'s 10 Largest guilds are:**__\`\`\`swift
-${bot.guilds.filter(s => s).sort((a, b)=> b.members.size-a.members.size).slice(0, 10).map((s, i) => "#" + (i + 1) + ": " + s.name + " (" + s.members.size + ")").join('\n')}\`\`\``
+${bot.guilds.filter(s => s).sort((a, b)=> b.members.size-a.members.size).slice(0, 10).map((s, i) => "#" + (i + 1) + ": " + s.id + " - " + s.name + " (" + s.members.size + ")").join('\n')}\`\`\``
             });
             //If args search the guilds and return the guilds that match args
             else {
@@ -29,7 +29,7 @@ ${bot.guilds.filter(s => s).sort((a, b)=> b.members.size-a.members.size).slice(0
                         //Spilt users into bots and users for easier detection of bot accumulation guilds
                         var bots = guildCache[i].members.filter(user => user.user.bot).length,
                             users = guildCache[i].members.size - bots;
-                        msgString += "\n[" + (i + 1) + "]: " + guildCache[i].name + " - " + bots + "/" + users + " " + ((bots / guildCache[i].members.size) * 100).toFixed(2) + "%";
+                        msgString += "\n[" + (i + 1) + "]: " + guildCache[i].id + " - " + guildCache[i].name + " - " + bots + "/" + users + " " + ((bots / guildCache[i].members.size) * 100).toFixed(2) + "%";
                     }
                 }
                 resolve({

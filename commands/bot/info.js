@@ -3,15 +3,15 @@ var libVersion = require('./../../node_modules/eris/package.json').version, //Th
     prefix = require('./../../options/options.json').prefix; //Default bot prefix
 
 module.exports = {
-    usage: "Returns **info** about the bot, including a link to the **support server**, a link to the bots **source code** & a link to the bots **documentation**.",
+    usage: "Returns **info** about the bot, including a link to the **test server**.",
     process: obj => {
         var bot = obj.bot;
         //returns basic info about the bot
         return Promise.resolve({
             message: `\`\`\`markdown
-[WishBot Info](${bot.user.username}) 
+[WishBot Info](${bot.user.username})
 
-Changeling Bot is built on top of Mei’s WishBot.
+Changeling Bot (by Chrys#1856) is built on top of Mei’s WishBot.
 
 # About this Bot
 [Developer of WishBot](Mei#5429)
@@ -23,12 +23,10 @@ Changeling Bot is built on top of Mei’s WishBot.
 # Use ${prefix}help for a list of the current bot commands.
 [WishBot source code](https://github.com/hsiw/Wishbot)
 [Changeling Bot source code](https://github.com/ddlr/WishBot)
-[Support server for Changeling Bot](https://discord.gg/hNYstHJ)
-[Docs for WishBot](https://github.com/hsiW/WishBot/wiki)
+[Testing server for Changeling Bot](https://discord.gg/hNYstHJ)
 
 WARNING: This bot can explode from time to time. Handle with caution.
-\`\`\`
-`
+\`\`\``
         })
     }
 }
