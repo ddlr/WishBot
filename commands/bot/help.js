@@ -19,17 +19,12 @@ module.exports = {
             // commands usage info
             //
             // Second part:
-            // Don’t reveal what admin and hidden commands do)
-            if (
-                commands.hasOwnProperty(args) && args !== 'help' &&
-                (
-                    (
-                        commands[args].type !== 'admin' ||
-                        admins.includes(msg.author.id)
-                    ) &&
-                    commands[args].type !== 'hidden'
-                )
-            ) {
+            // Don’t reveal what admin and hidden commands do
+            if ( commands.hasOwnProperty(args) && args !== 'help' &&
+                ( ( commands[args].type !== 'admin' ||
+                    admins.includes(msg.author.id)
+                  ) && commands[args].type !== 'hidden'
+                ) ) {
                 resolve({ message: commands[args].help });
             }
             else {
@@ -41,13 +36,13 @@ module.exports = {
 
 Note that most commands require a **command prefix** or **mentioning the \
 bot** at the start of the command to run. For example, the \`ping\` command \
-is run as \`${options.prefix}ping\` (command prefix may be different \
-depending on server) or \`@Changeling Bot ping\`. See **Requires prefix or \
-bot mention** in \`[command prefix]help (name of command of alias)\` to check.
+is run as \`[command prefix]ping\` or \`@Changeling Bot ping\`. See \
+**Requires prefix or bot mention** in \`[command prefix]help (name of command \
+of alias)\` to check.
 
-Also note that the command prefix can be changed using \
-\`${options.prefix}setprefix\`. The **command prefix on the current server** \
-can always be checked by running \`${options.prefix}checkprefix\`.\n`;
+Also note that the command prefix for the current server can be changed using \
+\`${options.prefix}setprefix\`. You can always check the **current command \
+prefix** set by running \`${options.prefix}checkprefix\`.\n`;
 
                 // Check if command should be included in output of help command
                 // Prints true if yes, false if no
