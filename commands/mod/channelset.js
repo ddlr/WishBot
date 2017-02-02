@@ -1,3 +1,5 @@
+// TODO: Add ability to not change logging error level from reject() (similar
+//       to derpibooru command)
 var Database = require('./../../utils/database_.js'),
     util = require('util');
 
