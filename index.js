@@ -12,6 +12,7 @@ var options = reload('./options/options.json'),
     commandLoader = reload('./utils/commandLoader.js'),
     utils = reload('./utils/utils.js'),
     database = reload('./utils/database.js'),
+    database_ = reload('./utils/database_.js'),
     runCmd = reload('./utils/commandRun.js'),
     usageChecker = reload('./utils/usageChecker.js'),
     admins = reload('./options/admins.json'),
@@ -87,7 +88,7 @@ bot.on("messageCreate", msg => {
     // If message author is a bot, don’t do anything
     if (msg.author.bot) return;
     // Disable bot for everyone but bot admins for testing purposes
-    // else if (! admins.includes(msg.author.id)) return;
+    // else if ( !admins.includes(msg.author.id) ) return;
     // If bot isn’t ready, tell the user so
     else if (! bot.ready) // TODO: Test if utils actually loads by this point
         msg.channel.createMessage(

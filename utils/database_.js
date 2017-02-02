@@ -43,6 +43,10 @@
 //       immediately (for errors) or keep going (for warnings). Concatenate
 //       error messages to resolve() and send to user as a message on Discord.
 
+// TODO: 'all' for options 0, 1, 2
+// TODO: Honour togglable option in commands
+// TODO: Ignore database output if command isn’t togglable anyway
+
 // guildTable and channelTable are the names of the table used in ~serverset
 // and ~guildset, respectively. Make sure they don’t have spaces.
 // In getRow(), the column to retrieve is checked against guildTable_cols or
@@ -143,9 +147,23 @@ function getRow(type, column, id) {
                 var response = res.rows[0][column];
                 resolve(response);
             }).catch(err => {
-                reject({
-                    log: ['getRow (client.query)', `Error: ${err.message}`]
-                });
+                client.release();
+                if (err.message ===
+                    'Cannot read property \'' + column + '\' of undefined') {
+                    addRow(type, column, id).then(
+                        () => getRow(type, column, id)
+                    ).then(
+                        out => resolve(out)
+                    ).catch(err => {
+                        reject({
+                            log: ['getRow (addRow)', `Error: ${err.message}`]
+                        });
+                    });
+                } else {
+                    reject({
+                        log: ['getRow (client.query)', `Error: ${err.message}`]
+                    });
+                }
             });
         }).catch(err => {
             reject({
@@ -165,6 +183,36 @@ function addRow(type, column, id) {
     //              else ERROR] VALUES (
     //     id [id]
     // );
+
+    // TODO: DRY this block?
+    var table;
+    try {
+        var table = tableNameAndCheckCol(type, column);
+    } catch (e) {
+        console.log(
+            errorC('addRow (tableNameAndCheckCol):') +
+            e.message
+        );
+        reject({
+            log: ['addRow (tableNameAndCheckCol)', e.message]
+        });
+    }
+
+    return new Promise((resolve, reject) => {
+        pool.connect().then(client => {
+            client.query(
+                'INSERT INTO ' + table + ' VALUES ( $1, \'{}\' )'
+              , [id]
+            ).then(res => {
+                client.release();
+                resolve();
+            }).catch(err => {
+                reject({
+                    log: ['addRow (client.query)', `Error: ${err.message}`]
+                });
+            });
+        });
+    });
 }
 
 function updateTable(type, column, value, id) {
@@ -203,6 +251,7 @@ function updateTable(type, column, value, id) {
                 var response = res.rows[0][column];
                 resolve(response);
             }).catch(err => {
+                client.release();
                 reject({
                     log: ['updateTable (client.query)', `Error: ${err.message}`]
                 });
@@ -217,10 +266,16 @@ function updateTable(type, column, value, id) {
 
 // TODO: Test if promise.then(function() { return genericFunctionName() }) works
 function formatTable(obj) {
-    return `**disabled commands**: ${util.inspect(obj)}`;
+    let result;
+    result =
+`**disabled** commands in **channel**: ${obj.channel.disabledCommands.join(', ')}
+**enabled** commands in **channel**: ${obj.channel.enabledCommands.join(', ')}
+**disabled** commands in **server**: ${obj.guild.disabledCommands.join(', ')}
+**enabled** commands in **server**: ${obj.guild.enabledCommands.join(', ')}`;
+    return result;
 }
 
-exports.toggleCommands = (type, option, id, cmdArgs) => {
+exports.toggleCommands = (type, option, id, cmdArgs, authorId) => {
     // This function enables/disables/toggles/checks the status of commands for
     // either the channel or the entire guild (i.e. server).
     //
@@ -234,13 +289,17 @@ exports.toggleCommands = (type, option, id, cmdArgs) => {
     // cmdArgs  - command(s) to enable/disable (array) OR ‘all’ to
     //            enable/disable all commands (the latter only works with
     //            option 0 and 1)
-
-    // TODO: 'all' instead of listing commands - this has already been added in
-    //       frontend
+    // msg      - message object
 
     var res_old;
 
     return new Promise((resolve, reject) => {
+        // This const statement cannot run at the beginning of the file or else
+        // commandLoader.js (which initialises commands object) will not have
+        // loaded yet
+        // TODO: Remove this
+        // const commandsList = Object.keys(commands);
+
         // Check for too many commands passed at once
         if (cmdArgs.length > maxCommandsPassed) {
             console.log(
@@ -256,8 +315,7 @@ exports.toggleCommands = (type, option, id, cmdArgs) => {
 
         // Retrieve the disabled commands for this guild or channel
         if ([0, 1, 2].includes(option)) {
-            var toggleCommandsMain = getRow(type, 'disabled_commands', id);
-            toggleCommandsMain.then(res => {
+            var toggleCommandsMain = getRow(type, 'disabled_commands', id).then(res => {
                 return new Promise((resolve, reject) => {
                     // This is only for testing purposes and lets us compare
                     // the disabled_commands before and after. slice() clones
@@ -376,9 +434,27 @@ exports.toggleCommands = (type, option, id, cmdArgs) => {
 
             // Retrieve disabled commands for both channel and entire
             // guild/server, respectively
-            var toggleCommandsMain = getRow('channel', 'disabled_commands', id);
-            toggleCommandsMain.then(res => {
+            var toggleCommandsMain = getRow('channel', 'disabled_commands', id).then(res => {
                 return new Promise((resolve) => {
+                    // Check status of ALL commands
+                    // Realistically, the only command that will trigger this
+                    // is `~channelset check all` or `~serverset check all` as
+                    // commands that pass multiple parameters like
+                    // `~channelset check all derpibooru` will be rejected by
+                    // frontend (i.e. ~channelset or ~serverset)
+                    if (cmdArgs.includes('all')) {
+                        // Filter out admin, hidden commands from check output
+                        cmdArgs = Object.keys(commands).filter(cmd => {
+                            if (commands[cmd].type === 'admin' &&
+                                !admins.includes(msg.author.id)) {
+                                return false;
+                            } else if (commands[cmd].type === 'hidden') {
+                                return false;
+                            } else {
+                                return true;
+                            }
+                        });
+                    }
                     // Check status of command(s)
                     for (let i = 0; i < cmdArgs.length; i++) {
                         // If command is currently disabled, insert into

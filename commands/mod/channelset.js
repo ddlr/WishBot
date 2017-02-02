@@ -23,6 +23,10 @@ the command is disabled, enable it. This is done on each command separately.
 ~channelset toggle command-one command-two command-three
 # Check whether or not the following commands are enabled.
 ~channelset check command-one command-two command-three
+# Toggle all commands
+~channelset toggle all
+# Check all commands
+~channelset check all
 \`\`\`
 
 A collection of examples:
@@ -116,7 +120,8 @@ A collection of examples:
                     resolve({
                         message:
                             'Error: `all` can’t be used with `toggle` ' +
-                            'option. See `` `help channelset` for examples.'
+                            'option. See `[command prefix]help channelset` ' +
+                            'for examples.'
                     });
 
                 }
@@ -128,8 +133,8 @@ A collection of examples:
                     );
                     resolve({
                         message:
-                            'Error: `all` can’t be used with other ' +
-                            'commands. See `` `help channelset` for examples.'
+                            'Error: You can’t enable/disable/toggle/check ' +
+                            '`all` with other commands.'
                     });
                 }
 
@@ -174,7 +179,7 @@ A collection of examples:
             //
             // See utils/database_.js for more details
             Database.toggleCommands(
-                'channel', option, msg.channel.guild.id, cmdArgs_new
+                'channel', option, msg.channel.guild.id, cmdArgs_new, msg
             ).then(response => {
                 // Doing above was successful - tell user so
                 resolve({
