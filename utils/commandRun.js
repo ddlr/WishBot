@@ -5,7 +5,7 @@
 
 // TODO: Check if database.js is reloaded
 // TODO: Make commandHandler.js reloadable
-// TODO: Prevent recursion
+// TODO: Use fileLog instead of console.log
 
 const database = require('./database.js'),
       processCmd = require('./commandHandler.js'),
@@ -23,7 +23,7 @@ module.exports = (obj) => {
         cmdTxt = obj.cmdTxt;
     return new Promise(resolve => {
         // If message doesn’t exist or no command passed
-        if (! obj.msg || ! obj.cmdTxt ) {
+        if (!obj.msg || !obj.cmdTxt) {
             console.log(
                 errorC('commandRun:') +
                 'msg or cmdTxt doesn’t exist.'

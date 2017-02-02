@@ -1,10 +1,10 @@
 module.exports = {
     usage:
-        'Send a **feature request** to the Bot Developer, or in other words, ' +
-        'sends a message to a secret channel somewhere in the abyss. ' +
-        'Requests can have a max length of **1950 characters**.' +
-        '\n\n' +
-        '`featurerequest [feature to request]`',
+`Send a **feature request** to the bot developer, or in other words, sends a \
+message to a secret channel somewhere in the abyss. Requests can have a max \
+length of **1950 characters**.
+
+\`[command prefix]featurerequest [feature to request]\``,
     aliases: ['suggest'],
     dm: false,
     cooldown: 60,
@@ -29,7 +29,7 @@ module.exports = {
             })
             else {
                 // Create a embed message to a channel at the user’s request
-                // Note that Chryssi has changed this to a channel in his own
+                // Note that Chrys has changed this to a channel in his own
                 // server
                 //
                 // To whoever wants to run their own instance of this bot:
@@ -53,8 +53,8 @@ module.exports = {
                         }
                     }
                 }).then(() => resolve({
-                    // Tell the user that their request was successfully sent to
-                    // the request channel on promise resolve
+                    // Tell the user that their request was successfully sent
+                    // to the request channel on promise resolve
                     message:
                         'Your request was successfully sent, ' +
                         `**${msg.author.username}**.`

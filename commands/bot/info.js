@@ -8,25 +8,26 @@ module.exports = {
         var bot = obj.bot;
         //returns basic info about the bot
         return Promise.resolve({
-            message: `\`\`\`markdown
-[WishBot Info](${bot.user.username})
+            message:
+`__**About Changeling #6006, a.k.a. ${bot.user.mention}**__
 
 Changeling Bot (by Chrys#1856) is built on top of Mei’s WishBot.
 
-# About this Bot
-[Developer of WishBot](Mei#5429)
-[Developer of Changeling Bot](Chrys#1856)
-[Default Prefix](${prefix})
-[Bot Version](v${botVersion})
-[Discord Library](Eris - v${libVersion})
+**Developer of WishBot:** Mei#5429
+**Developer of Changeling Bot:** Chrys#1856
+**Default Prefix:** \`${prefix}\`
+**Bot version:** v${botVersion}
+**Discord library:** Eris - v${libVersion}
 
-# Use ${prefix}help for a list of the current bot commands.
-[WishBot source code](https://github.com/hsiw/Wishbot)
-[Changeling Bot source code](https://github.com/ddlr/WishBot)
-[Testing server for Changeling Bot](https://discord.gg/hNYstHJ)
+Use \`[command prefix]help\` for a list of the current bot commands.
 
-WARNING: This bot can explode from time to time. Handle with caution.
-\`\`\``
-        })
+**WishBot source code:** <https://github.com/hsiw/Wishbot>
+**Changeling Bot source code:** <https://github.com/ddlr/WishBot>
+
+**Official testing server** for Changeling Bot: https://discord.gg/hNYstHJ
+(ask for access to the #testing channel)
+
+WARNING: This bot can explode from time to time. Handle with caution.`
+        });
     }
-}
+};
